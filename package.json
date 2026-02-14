@@ -9,9 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@mercadopago/sdk-react": "^1.0.7",
+    "@opensea/seaport-js": "^4.0.6",
+    "alchemy-sdk": "^3.6.5",
+    "ethers": "^6.16.0",
+    "mercadopago": "^2.12.0",
     "next": "16.1.6",
+    "opensea-js": "^8.0.15",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "thirdweb": "^5.118.1",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
