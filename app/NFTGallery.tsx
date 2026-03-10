@@ -14,7 +14,7 @@ interface NFTData {
 }
 
 // CryptoRastas contract address on Ethereum mainnet
-const CRYPTORASTAS_CONTRACT = "0x31d45de84fDE2fB36575085e05754a4932DD5170";
+const CRYPTORASTAS_CONTRACT = "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
 
 export function NFTGallery({ walletAddress }: NFTGalleryProps) {
   const [nfts, setNfts] = useState<NFTData[]>([]);
