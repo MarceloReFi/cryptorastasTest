@@ -3,8 +3,11 @@ import "./globals.css";
 import { ThirdwebProvider } from "thirdweb/react";
 
 export const metadata: Metadata = {
-  title: "CryptoRastas Wallet",
-  description: "One Love inna Decentralized Style",
+  title: "Rasta Wallet",
+  description: "Compre CryptoRastas de forma simples com PIX ou ETH",
+  icons: {
+    icon: '/cryptorastas-logo-wide.png',
+  },
 };
 
 export default function RootLayout({

@@ -3,6 +3,15 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Cores Rasta */
+  --rasta-green: #00A651;
+  --rasta-green-dark: #008541;
+  --rasta-yellow: #FDB913;
+  --rasta-yellow-dark: #F7931E;
+  --rasta-red: #ED1C24;
+  --rasta-red-dark: #C1272D;
+  --rasta-black: #000000;
 }
 
 @theme inline {
@@ -23,4 +32,17 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Classes utilitárias Rasta */
+.bg-rasta-green { background-color: var(--rasta-green); }
+.bg-rasta-yellow { background-color: var(--rasta-yellow); }
+.bg-rasta-red { background-color: var(--rasta-red); }
+.hover\:bg-rasta-green-dark:hover { background-color: var(--rasta-green-dark); }
+.hover\:bg-rasta-yellow-dark:hover { background-color: var(--rasta-yellow-dark); }
+.border-rasta-green { border-color: var(--rasta-green); }
+
+/* Gradiente Rasta */
+.bg-rasta-gradient {
+  background: linear-gradient(135deg, #ED1C24 0%, #FDB913 50%, #00A651 100%);
 }
