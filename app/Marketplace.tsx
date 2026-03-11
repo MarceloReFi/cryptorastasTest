@@ -12,12 +12,12 @@ const client = createThirdwebClient({
 
 const SEAPORT_ADDRESS = "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
 
-export function Marketplace() {
+export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = itemsPerPage;
   const account = useActiveAccount();
   const { mutate: sendTransaction } = useSendTransaction();
 

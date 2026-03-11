@@ -5,6 +5,7 @@ import { Alchemy, Network } from "alchemy-sdk";
 
 interface NFTGalleryProps {
   walletAddress: string;
+  itemsPerPage?: number;
 }
 
 interface NFTData {
@@ -16,10 +17,12 @@ interface NFTData {
 // CryptoRastas contract address on Ethereum mainnet
 const CRYPTORASTAS_CONTRACT = "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
 
-export function NFTGallery({ walletAddress }: NFTGalleryProps) {
+export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps) {
   const [nfts, setNfts] = useState<NFTData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const ITEMS_PER_PAGE = itemsPerPage;
 
   useEffect(() => {
     const fetchNFTs = async () => {
@@ -101,9 +104,32 @@ export function NFTGallery({ walletAddress }: NFTGalleryProps) {
     );
   }
 
+  const totalPages = Math.ceil(nfts.length / ITEMS_PER_PAGE);
+  const paginatedNfts = nfts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
+
   return (
+    <>
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-4 mb-4">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+            disabled={currentPage === 0}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Anterior
+          </button>
+          <span className="py-2">Página {currentPage + 1} de {totalPages}</span>
+          <button
+            onClick={() => setCurrentPage((p) => p + 1)}
+            disabled={currentPage + 1 >= totalPages}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Próxima
+          </button>
+        </div>
+      )}
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {nfts.map((nft) => (
+      {paginatedNfts.map((nft) => (
         <div
           key={nft.tokenId}
           className="bg-gradient-to-br from-green-100 to-yellow-100 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-200"
@@ -126,5 +152,6 @@ export function NFTGallery({ walletAddress }: NFTGalleryProps) {
         </div>
       ))}
     </div>
+    </>
   );
 }
