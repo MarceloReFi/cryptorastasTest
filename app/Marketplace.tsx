@@ -17,6 +17,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
   const [pixModal, setPixModal] = useState<{
     payment_id: string;
     amount_brl: number;
@@ -33,7 +34,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         let allListings: any[] = [];
         let nextCursor: string | null = null;
         let fetchCount = 0;
-        const maxFetches = 1;
+        const maxFetches = 5;
 
         do {
           const url: string = nextCursor
@@ -57,6 +58,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         } while (nextCursor && fetchCount < maxFetches);
 
         if (allListings.length > 0) {
+          console.log(`📊 Total de listings encontrados: ${allListings.length}`);
           const nftsWithDetails = await Promise.all(
             allListings.map(async (listing: any) => {
               const tokenId =
@@ -92,7 +94,9 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
             })
           );
 
-          setListings(nftsWithDetails.filter((nft) => nft !== null));
+          const validListings = nftsWithDetails.filter((nft) => nft !== null);
+          console.log(`✅ ${validListings.length} NFTs válidos carregados`);
+          setListings(validListings);
         }
       } catch (error) {
         console.error("Error fetching listings:", error);
@@ -102,7 +106,16 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     }
 
     fetchListings();
-  }, []);
+  }, [lastRefresh]);
+
+  const refreshListings = () => {
+    setLastRefresh(Date.now());
+    setCurrentPage(0);
+  };
+
+  const removeInvalidListing = (tokenId: string) => {
+    setListings((prev) => prev.filter((nft) => nft.tokenId !== tokenId));
+  };
 
   const closePixModal = () => setPixModal(null);
 
@@ -142,6 +155,18 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
 
       const result = await response.json();
       console.log("📦 Resposta completa:", result);
+
+      // Verificar se o erro é "Order not found"
+      if (result.error && result.message && result.message.includes("Order not found")) {
+        console.warn("⚠️ Listing expirado ou já vendido");
+        removeInvalidListing(nft.tokenId);
+        alert(
+          "❌ Este NFT já foi vendido ou não está mais disponível.\n\n" +
+            "A lista foi atualizada. Por favor, escolha outro NFT."
+        );
+        setPurchasing(null);
+        return;
+      }
 
       if (result.error) {
         console.error("❌ Erro da API:", result);
@@ -191,6 +216,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         onSuccess: (result) => {
           console.log("✅ Compra bem-sucedida:", result.transactionHash);
           alert(`✅ Compra realizada com sucesso!\n\nTransação: ${result.transactionHash}`);
+          removeInvalidListing(nft.tokenId);
           setPurchasing(null);
         },
         onError: (error) => {
@@ -270,7 +296,15 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   if (listings.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Nenhuma CryptoRasta disponível no momento</p>
+        <div className="space-y-4">
+          <p className="text-gray-600">Nenhuma CryptoRasta disponível no momento</p>
+          <button
+            onClick={refreshListings}
+            className="px-6 py-3 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark transition-all shadow-md"
+          >
+            🔄 Atualizar Listagens
+          </button>
+        </div>
       </div>
     );
   }
@@ -322,6 +356,19 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
           </div>
         </div>
       )}
+
+      {/* Botão Refresh */}
+      <div className="flex justify-between items-center mb-4">
+        <p className="text-sm text-gray-600">
+          {listings.length} NFTs disponíveis
+        </p>
+        <button
+          onClick={refreshListings}
+          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all text-sm"
+        >
+          🔄 Atualizar
+        </button>
+      </div>
 
       {/* Pagination */}
       <div className="flex justify-center gap-4 mb-4">
