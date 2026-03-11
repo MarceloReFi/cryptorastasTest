@@ -114,7 +114,7 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
           <button
             onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
             disabled={currentPage === 0}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            className="px-6 py-2 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Anterior
           </button>
@@ -122,7 +122,7 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
           <button
             onClick={() => setCurrentPage((p) => p + 1)}
             disabled={currentPage + 1 >= totalPages}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            className="px-6 py-2 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Próxima
           </button>
@@ -132,7 +132,7 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
       {paginatedNfts.map((nft) => (
         <div
           key={nft.tokenId}
-          className="bg-gradient-to-br from-green-100 to-yellow-100 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-200"
+          className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
         >
           {nft.image ? (
             <img

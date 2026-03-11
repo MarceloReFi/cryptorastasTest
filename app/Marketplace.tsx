@@ -100,7 +100,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
 
   const handlePurchase = async (nft: any) => {
     if (!account) {
-      alert("Please connect your wallet first!");
+      alert("Por favor, conecte sua carteira primeiro!");
       return;
     }
 
@@ -133,26 +133,26 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
 
         sendTransaction(transaction, {
           onSuccess: (result) => {
-            alert(`Purchase successful!\n\nTransaction: ${result.transactionHash}`);
+            alert(`Compra realizada com sucesso!\n\nTransação: ${result.transactionHash}`);
             setPurchasing(null);
           },
           onError: (error) => {
             console.error("Transaction failed:", error);
-            alert(`Transaction failed: ${error.message}`);
+            alert(`Transação falhou: ${error.message}`);
             setPurchasing(null);
           },
         });
       }
     } catch (error: any) {
       console.error("Purchase error:", error);
-      alert(`Purchase failed: ${error.message || "Unknown error"}`);
+      alert(`Compra falhou: ${error.message || "Erro desconhecido"}`);
       setPurchasing(null);
     }
   };
 
   const handlePixPayment = async (nft: any) => {
     if (!account) {
-      alert("Please connect your wallet first!");
+      alert("Por favor, conecte sua carteira primeiro!");
       return;
     }
 
@@ -180,10 +180,10 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
       }
 
       alert(
-        `PIX Payment Created!\n\n` +
-          `Amount: R$ ${data.amount_brl.toFixed(2)}\n\n` +
-          `Scan the QR code or copy the PIX code.\n` +
-          `Payment ID: ${data.payment_id}`
+        `Pagamento PIX Criado!\n\n` +
+          `Valor: R$ ${data.amount_brl.toFixed(2)}\n\n` +
+          `Escaneie o QR Code ou copie o código PIX.\n` +
+          `ID do Pagamento: ${data.payment_id}`
       );
 
       if (data.ticket_url) {
@@ -193,7 +193,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
       setPurchasing(null);
     } catch (error: any) {
       console.error("PIX payment error:", error);
-      alert(`Failed to create PIX payment: ${error.message}`);
+      alert(`Falha ao criar pagamento PIX: ${error.message}`);
       setPurchasing(null);
     }
   };
@@ -222,7 +222,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         <button
           onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
           disabled={currentPage === 0}
-          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          className="px-6 py-2 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           Anterior
         </button>
@@ -233,7 +233,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         <button
           onClick={() => setCurrentPage((p) => p + 1)}
           disabled={(currentPage + 1) * ITEMS_PER_PAGE >= listings.length}
-          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          className="px-6 py-2 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           Próxima
         </button>
@@ -248,7 +248,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
           .map((nft) => (
             <div
               key={nft.tokenId}
-              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
             >
               <div className="w-full h-48 bg-gray-200">
                 {nft.image && (
@@ -273,7 +273,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
                     <button
                       onClick={() => handlePurchase(nft)}
                       disabled={purchasing === nft.tokenId}
-                      className={`w-full py-2 rounded-lg font-semibold ${
+                      className={`w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg ${
                         purchasing === nft.tokenId
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-blue-500 hover:bg-blue-600 text-white"
@@ -286,10 +286,10 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
                     <button
                       onClick={() => handlePixPayment(nft)}
                       disabled={purchasing === nft.tokenId}
-                      className={`w-full py-2 rounded-lg font-semibold ${
+                      className={`w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg ${
                         purchasing === nft.tokenId
                           ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-rasta-yellow hover:bg-rasta-yellow-dark text-black font-bold"
+                          : "bg-rasta-yellow hover:bg-rasta-yellow-dark text-black"
                       }`}
                     >
                       Comprar com PIX
