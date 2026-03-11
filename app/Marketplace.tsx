@@ -32,7 +32,7 @@ export function Marketplace() {
         const maxFetches = 1;
 
         do {
-          const url = nextCursor
+          const url: string = nextCursor
             ? `https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=20&next=${nextCursor}`
             : "https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=20";
 
