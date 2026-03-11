@@ -23,7 +23,7 @@ export default function CardPaymentForm({
     installments: number;
     payment_method_id: string;
     payer: {
-      email: string;
+      email: string | undefined;
       identification: { type: string; number: string };
     };
   }) => {
