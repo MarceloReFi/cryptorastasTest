@@ -4,16 +4,29 @@ import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { createThirdwebClient } from "thirdweb";
 import { inAppWallet } from "thirdweb/wallets";
 import { NFTGallery } from "./NFTGallery";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Marketplace } from "./Marketplace";
 
 const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
 });
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
 export default function Home() {
   const account = useActiveAccount();
-  const [activeTab, setActiveTab] = useState<"owned" | "marketplace">("owned");
+  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen bg-rasta-gradient p-4">
@@ -38,16 +51,30 @@ export default function Home() {
             </div>
             <ConnectButton
               client={client}
-              wallets={[inAppWallet()]}
+              wallets={[
+                inAppWallet({
+                  auth: {
+                    options: ["email", "wallet"],
+                  },
+                }),
+              ]}
               connectModal={{
                 size: "compact",
+                title: "Crie uma nova conta",
+                welcomeScreen: {
+                  title: "Bem-vindo à Rasta Wallet",
+                  subtitle: "Compre CryptoRastas de forma simples",
+                },
+              }}
+              connectButton={{
+                label: "Conectar Carteira",
               }}
             />
           </div>
 
           {account && (
             <div className="mt-4 bg-gray-100 p-4 rounded-lg">
-              <p className="text-xs text-gray-600 mb-1">Your Wallet:</p>
+              <p className="text-xs text-gray-600 mb-1">Sua Carteira:</p>
               <p className="text-sm font-mono text-gray-800">
                 {account.address}
               </p>
@@ -55,55 +82,29 @@ export default function Home() {
           )}
         </div>
 
-        {/* Tabs */}
-        {account && (
-          <div className="bg-white p-2 rounded-lg shadow-2xl mb-6">
-            <div className="flex gap-2">
-              <button
-                onClick={() => setActiveTab("owned")}
-                className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
-                  activeTab === "owned"
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                My NFTs
-              </button>
-              <button
-                onClick={() => setActiveTab("marketplace")}
-                className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
-                  activeTab === "marketplace"
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                Marketplace
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Content */}
+        {/* Conteúdo unificado */}
         {account ? (
-          <div className="bg-white p-6 rounded-lg shadow-2xl">
-            {activeTab === "owned" ? (
-              <>
-                <h2 className="text-2xl font-bold mb-4">Your CryptoRastas</h2>
-                <NFTGallery walletAddress={account.address} />
-              </>
-            ) : (
-              <>
-             <h2 className="text-2xl font-bold mb-4">
-  CryptoRastas Marketplace
-</h2>
-<Marketplace />
-              </>
-            )}
+          <div className="space-y-6">
+            {/* Minhas CryptoRastas */}
+            <div className="bg-white p-6 rounded-lg shadow-2xl">
+              <h2 className="text-2xl font-bold mb-4">Minhas CryptoRastas</h2>
+              <NFTGallery
+                walletAddress={account.address}
+                itemsPerPage={isMobile ? 10 : 20}
+              />
+            </div>
+            {/* Marketplace */}
+            <div className="bg-white p-6 rounded-lg shadow-2xl">
+              <h2 className="text-2xl font-bold mb-4">
+                Marketplace CryptoRastas
+              </h2>
+              <Marketplace itemsPerPage={isMobile ? 10 : 20} />
+            </div>
           </div>
         ) : (
           <div className="bg-white p-6 rounded-lg shadow-2xl text-center">
             <p className="text-gray-600">
-              Conecte sua carteira para ver suas CryptoRastas
+              Conecte sua carteira para ver e comprar CryptoRastas
             </p>
           </div>
         )}
