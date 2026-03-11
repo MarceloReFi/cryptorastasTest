@@ -114,15 +114,15 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
           <button
             onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
             disabled={currentPage === 0}
-            className="px-6 py-2 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Anterior
           </button>
-          <span className="py-2">Página {currentPage + 1} de {totalPages}</span>
+          <span className="py-2 text-gray-800 font-semibold text-sm sm:text-base">Página {currentPage + 1} de {totalPages}</span>
           <button
             onClick={() => setCurrentPage((p) => p + 1)}
-            disabled={currentPage + 1 >= totalPages}
-            className="px-6 py-2 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            disabled={currentPage >= totalPages - 1}
+            className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Próxima
           </button>
@@ -134,18 +134,18 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
           key={nft.tokenId}
           className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
         >
-          {nft.image ? (
-            <img
-              src={nft.image}
-              alt={nft.title}
-              className="w-full h-64 object-cover"
-            />
-          ) : (
-            <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
-              <span className="text-gray-400">No image</span>
-            </div>
-          )}
-          <div className="p-4">
+          <div className="w-full h-56 bg-gray-100 flex items-center justify-center">
+            {nft.image ? (
+              <img
+                src={nft.image}
+                alt={nft.title}
+                className="max-w-full max-h-full object-contain"
+              />
+            ) : (
+              <span className="text-gray-400 text-sm">Sem imagem</span>
+            )}
+          </div>
+          <div className="p-3 sm:p-4">
             <h3 className="font-bold text-gray-800 truncate">{nft.title}</h3>
             <p className="text-sm text-gray-600">Token #{nft.tokenId}</p>
           </div>
