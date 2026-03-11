@@ -16,18 +16,25 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"owned" | "marketplace">("owned");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-400 to-yellow-500 p-4">
+    <div className="min-h-screen bg-rasta-gradient p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="bg-white p-6 rounded-lg shadow-2xl mb-6">
+        <div className="bg-white p-6 rounded-lg shadow-2xl mb-6 border-t-4 border-rasta-green">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">
-                CryptoRastas Wallet
-              </h1>
-              <p className="text-gray-600">
-                One Love inna Decentralized Style
-              </p>
+            <div className="flex items-center gap-4">
+              <img
+                src="/cryptorastas-logo-wide.png"
+                alt="CryptoRastas Logo"
+                className="h-12 w-auto"
+              />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">
+                  Rasta Wallet
+                </h1>
+                <p className="text-gray-600">
+                  Compre CryptoRastas de forma simples
+                </p>
+              </div>
             </div>
             <ConnectButton
               client={client}
@@ -96,7 +103,7 @@ export default function Home() {
         ) : (
           <div className="bg-white p-6 rounded-lg shadow-2xl text-center">
             <p className="text-gray-600">
-              Connect your wallet to see your CryptoRastas NFTs
+              Conecte sua carteira para ver suas CryptoRastas
             </p>
           </div>
         )}

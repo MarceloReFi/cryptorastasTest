@@ -202,7 +202,7 @@ export function Marketplace() {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading marketplace...</p>
+        <p className="mt-4 text-gray-600">Carregando marketplace...</p>
       </div>
     );
   }
@@ -210,7 +210,7 @@ export function Marketplace() {
   if (listings.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">No listings available right now</p>
+        <p className="text-gray-600">Nenhuma CryptoRasta disponível no momento</p>
       </div>
     );
   }
@@ -280,8 +280,8 @@ export function Marketplace() {
                       }`}
                     >
                       {purchasing === nft.tokenId
-                        ? "Processing..."
-                        : "Buy with ETH"}
+                        ? "Processando..."
+                        : "Comprar com ETH"}
                     </button>
                     <button
                       onClick={() => handlePixPayment(nft)}
@@ -289,10 +289,10 @@ export function Marketplace() {
                       className={`w-full py-2 rounded-lg font-semibold ${
                         purchasing === nft.tokenId
                           ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-yellow-500 hover:bg-yellow-600 text-white"
+                          : "bg-rasta-yellow hover:bg-rasta-yellow-dark text-black font-bold"
                       }`}
                     >
-                      Buy with PIX
+                      Comprar com PIX
                     </button>
                   </div>
                 ) : (
@@ -300,7 +300,7 @@ export function Marketplace() {
                     disabled
                     className="w-full mt-3 py-2 rounded-lg font-semibold bg-gray-300 text-gray-600 cursor-not-allowed"
                   >
-                    Connect Wallet to Buy
+                    Conecte para Comprar
                   </button>
                 )}
               </div>

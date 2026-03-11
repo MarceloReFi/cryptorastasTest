@@ -69,7 +69,7 @@ export function NFTGallery({ walletAddress }: NFTGalleryProps) {
         <div className="relative">
           <div className="w-12 h-12 border-4 border-green-200 rounded-full animate-spin border-t-green-600"></div>
           <p className="text-gray-600 mt-4 text-center">
-            Loading your Rastas...
+            Carregando suas CryptoRastas...
           </p>
         </div>
       </div>
@@ -89,13 +89,13 @@ export function NFTGallery({ walletAddress }: NFTGalleryProps) {
       <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-8 text-center">
         <div className="text-4xl mb-4">🎨</div>
         <h3 className="text-xl font-bold text-gray-800 mb-2">
-          No CryptoRastas Found
+          Nenhuma CryptoRasta encontrada
         </h3>
         <p className="text-gray-600">
-          You don&apos;t have any CryptoRastas NFTs in this wallet yet.
+          Você ainda não tem CryptoRastas nesta carteira.
         </p>
         <p className="text-sm text-gray-500 mt-2">
-          Get yours on OpenSea or other NFT marketplaces!
+          Compre a sua no marketplace!
         </p>
       </div>
     );
