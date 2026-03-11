@@ -33,7 +33,7 @@ export default function Home() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white p-6 rounded-lg shadow-2xl mb-6 border-t-4 border-rasta-green">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <img
                 src="/Cryptorastas-logo-wide.png"
@@ -87,7 +87,7 @@ export default function Home() {
           <div className="space-y-6">
             {/* Minhas CryptoRastas */}
             <div className="bg-white p-6 rounded-lg shadow-2xl">
-              <h2 className="text-2xl font-bold mb-4">Minhas CryptoRastas</h2>
+              <h2 className="text-2xl font-bold mb-4 text-gray-900">Minhas CryptoRastas</h2>
               <NFTGallery
                 walletAddress={account.address}
                 itemsPerPage={isMobile ? 10 : 20}
@@ -95,7 +95,7 @@ export default function Home() {
             </div>
             {/* Marketplace */}
             <div className="bg-white p-6 rounded-lg shadow-2xl">
-              <h2 className="text-2xl font-bold mb-4">
+              <h2 className="text-2xl font-bold mb-4 text-gray-900">
                 Marketplace CryptoRastas
               </h2>
               <Marketplace itemsPerPage={isMobile ? 10 : 20} />

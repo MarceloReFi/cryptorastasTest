@@ -222,24 +222,24 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         <button
           onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
           disabled={currentPage === 0}
-          className="px-6 py-2 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           Anterior
         </button>
-        <span className="py-2">
+        <span className="py-2 text-gray-800 font-semibold text-sm sm:text-base">
           Página {currentPage + 1} de{" "}
           {Math.ceil(listings.length / ITEMS_PER_PAGE)}
         </span>
         <button
           onClick={() => setCurrentPage((p) => p + 1)}
-          disabled={(currentPage + 1) * ITEMS_PER_PAGE >= listings.length}
-          className="px-6 py-2 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          disabled={currentPage >= Math.ceil(listings.length / ITEMS_PER_PAGE) - 1}
+          className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           Próxima
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
         {listings
           .slice(
             currentPage * ITEMS_PER_PAGE,
@@ -250,19 +250,21 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
               key={nft.tokenId}
               className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
             >
-              <div className="w-full h-48 bg-gray-200">
-                {nft.image && (
+              <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                {nft.image ? (
                   <img
                     src={nft.image}
                     alt={nft.name}
-                    className="w-full h-48 object-cover"
+                    className="max-w-full max-h-full object-contain"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
+                ) : (
+                  <span className="text-gray-400 text-sm">Sem imagem</span>
                 )}
               </div>
-              <div className="p-3">
+              <div className="p-3 sm:p-4">
                 <p className="font-bold text-sm truncate">{nft.name}</p>
                 <p className="text-lg font-bold text-green-600 mt-2">
                   {(parseInt(nft.price) / Math.pow(10, nft.decimals)).toFixed(4)}{" "}
