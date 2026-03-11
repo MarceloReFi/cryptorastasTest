@@ -36,7 +36,7 @@ export default function Home() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <img
-                src="/cryptorastas-logo-wide.png"
+                src="/Cryptorastas-logo-wide.png"
                 alt="CryptoRastas Logo"
                 className="h-12 w-auto"
               />
