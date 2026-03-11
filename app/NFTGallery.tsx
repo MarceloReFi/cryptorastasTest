@@ -41,11 +41,11 @@ export function NFTGallery({ walletAddress }: NFTGalleryProps) {
 
         const nftData: NFTData[] = response.ownedNfts.map((nft) => ({
           tokenId: nft.tokenId,
-          title: nft.title || `CryptoRasta #${nft.tokenId}`,
+          title: nft.name || `CryptoRasta #${nft.tokenId}`,
           image:
-            nft.media?.[0]?.gateway ||
-            nft.media?.[0]?.thumbnail ||
-            nft.media?.[0]?.raw ||
+            nft.image?.cachedUrl ||
+            nft.image?.thumbnailUrl ||
+            nft.image?.originalUrl ||
             "",
         }));
 
