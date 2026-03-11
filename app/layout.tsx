@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Rasta Wallet - Compre CryptoRastas",
   description: "Marketplace de CryptoRastas. Compre de forma simples usando PIX ou ETH, sem complicação.",
   icons: {
-    icon: '/cryptorastas-logo-wide.png',
+    icon: '/Cryptorastas-logo-wide.png',
   },
 };
 
