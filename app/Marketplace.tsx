@@ -17,6 +17,12 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [pixModal, setPixModal] = useState<{
+    payment_id: string;
+    amount_brl: number;
+    qr_code?: string;
+    ticket_url?: string;
+  } | null>(null);
   const ITEMS_PER_PAGE = itemsPerPage;
   const account = useActiveAccount();
   const { mutate: sendTransaction } = useSendTransaction();
@@ -98,6 +104,14 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     fetchListings();
   }, []);
 
+  const closePixModal = () => setPixModal(null);
+
+  const openPixQRCode = () => {
+    if (pixModal?.ticket_url) {
+      window.open(pixModal.ticket_url, "_blank");
+    }
+  };
+
   const handlePurchase = async (nft: any) => {
     if (!account) {
       alert("Por favor, conecte sua carteira primeiro!");
@@ -107,6 +121,9 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     setPurchasing(nft.tokenId);
 
     try {
+      console.log("🔄 Iniciando compra ETH...");
+      console.log("NFT:", nft.tokenId, "Preço:", nft.price);
+
       const response = await fetch("/api/fulfill-listing", {
         method: "POST",
         headers: {
@@ -118,34 +135,53 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         }),
       });
 
-      const result = await response.json();
+      console.log("Status API:", response.status);
 
-      if (result.fulfillment_data?.transaction?.input_data?.data) {
-        const txData = result.fulfillment_data.transaction.input_data.data;
-
-        const transaction = prepareTransaction({
-          to: SEAPORT_ADDRESS,
-          chain: ethereum,
-          client: client,
-          data: txData,
-          value: BigInt(nft.price),
-        });
-
-        sendTransaction(transaction, {
-          onSuccess: (result) => {
-            alert(`Compra realizada com sucesso!\n\nTransação: ${result.transactionHash}`);
-            setPurchasing(null);
-          },
-          onError: (error) => {
-            console.error("Transaction failed:", error);
-            alert(`Transação falhou: ${error.message}`);
-            setPurchasing(null);
-          },
-        });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Erro API:", errorText);
+        throw new Error(`Erro na API (${response.status})`);
       }
+
+      const result = await response.json();
+      console.log("Resposta:", result);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      if (!result.fulfillment_data?.transaction?.input_data?.data) {
+        console.error("❌ Dados incompletos:", result);
+        throw new Error("Dados de transação não encontrados");
+      }
+
+      const txData = result.fulfillment_data.transaction.input_data.data;
+
+      const transaction = prepareTransaction({
+        to: SEAPORT_ADDRESS,
+        chain: ethereum,
+        client: client,
+        data: txData,
+        value: BigInt(nft.price),
+      });
+
+      console.log("📤 Enviando transação...");
+
+      sendTransaction(transaction, {
+        onSuccess: (result) => {
+          console.log("✅ Sucesso:", result.transactionHash);
+          alert(`✅ Compra realizada!\n\nHash: ${result.transactionHash}`);
+          setPurchasing(null);
+        },
+        onError: (error) => {
+          console.error("❌ Falha na transação:", error);
+          alert(`❌ Transação falhou:\n${error.message}\n\nVerifique se tem ETH suficiente.`);
+          setPurchasing(null);
+        },
+      });
     } catch (error: any) {
-      console.error("Purchase error:", error);
-      alert(`Compra falhou: ${error.message || "Erro desconhecido"}`);
+      console.error("💥 Erro:", error);
+      alert(`❌ Erro: ${error.message}\n\nVerifique o console (F12) para detalhes.`);
       setPurchasing(null);
     }
   };
@@ -179,16 +215,12 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         throw new Error(data.error);
       }
 
-      alert(
-        `Pagamento PIX Criado!\n\n` +
-          `Valor: R$ ${data.amount_brl.toFixed(2)}\n\n` +
-          `Escaneie o QR Code ou copie o código PIX.\n` +
-          `ID do Pagamento: ${data.payment_id}`
-      );
-
-      if (data.ticket_url) {
-        window.open(data.ticket_url, "_blank");
-      }
+      setPixModal({
+        payment_id: data.payment_id,
+        amount_brl: data.amount_brl,
+        qr_code: data.qr_code,
+        ticket_url: data.ticket_url,
+      });
 
       setPurchasing(null);
     } catch (error: any) {
@@ -217,6 +249,52 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
 
   return (
     <>
+      {/* Modal PIX */}
+      {pixModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Pagamento PIX Criado
+            </h3>
+
+            <div className="space-y-3 mb-6">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-gray-600">Valor:</p>
+                <p className="text-2xl font-bold text-green-600">
+                  R$ {pixModal.amount_brl.toFixed(2)}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <p className="text-sm text-gray-600">ID do Pagamento:</p>
+                <p className="text-xs font-mono text-gray-800 break-all">
+                  {pixModal.payment_id}
+                </p>
+              </div>
+
+              <p className="text-sm text-gray-600 text-center">
+                Clique em &quot;Abrir QR Code&quot; para escanear ou copiar o código PIX
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={closePixModal}
+                className="flex-1 py-3 px-4 rounded-lg font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={openPixQRCode}
+                className="flex-1 py-3 px-4 rounded-lg font-bold bg-rasta-yellow text-black hover:bg-rasta-yellow-dark transition-all shadow-md"
+              >
+                Abrir QR Code PIX
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pagination */}
       <div className="flex justify-center gap-4 mb-4">
         <button
