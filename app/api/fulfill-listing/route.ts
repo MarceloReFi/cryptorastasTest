@@ -2,17 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { orderHash, walletAddress } = await request.json();
+    const { orderHash, walletAddress, protocolAddress } = await request.json();
 
     console.log("🔄 Fulfill-listing request:");
     console.log("Order Hash:", orderHash);
     console.log("Wallet:", walletAddress);
+    console.log("Protocol Address:", protocolAddress);
+
+    const resolvedProtocol =
+      protocolAddress || "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
 
     const requestBody = {
       listing: {
         hash: orderHash,
         chain: "ethereum",
-        protocol_address: "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
+        protocol_address: resolvedProtocol,
       },
       fulfiller: {
         address: walletAddress,
