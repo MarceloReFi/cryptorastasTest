@@ -3,8 +3,8 @@ import "./globals.css";
 import { ThirdwebProvider } from "thirdweb/react";
 
 export const metadata: Metadata = {
-  title: "Rasta Wallet",
-  description: "Compre CryptoRastas de forma simples com PIX ou ETH",
+  title: "Rasta Wallet - Compre CryptoRastas",
+  description: "Marketplace de CryptoRastas. Compre de forma simples usando PIX ou ETH, sem complicação.",
   icons: {
     icon: '/cryptorastas-logo-wide.png',
   },

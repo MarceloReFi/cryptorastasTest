@@ -75,7 +75,7 @@ export default function Home() {
           {account && (
             <div className="mt-4 bg-gray-100 p-4 rounded-lg">
               <p className="text-xs text-gray-600 mb-1">Sua Carteira:</p>
-              <p className="text-sm font-mono text-gray-800">
+              <p className="text-sm font-mono text-gray-800 truncate">
                 {account.address}
               </p>
             </div>
