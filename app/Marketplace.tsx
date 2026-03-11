@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 import { prepareTransaction } from "thirdweb";
 import { ethereum } from "thirdweb/chains";
-import { createThirdwebClient, getContract } from "thirdweb";
-import CardPaymentForm from "./components/CardPayment";
+import { createThirdwebClient } from "thirdweb";
 
 const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
@@ -17,7 +16,6 @@ export function Marketplace() {
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
-  const [cardPaymentNft, setCardPaymentNft] = useState<any | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const ITEMS_PER_PAGE = 20;
   const account = useActiveAccount();
@@ -56,38 +54,43 @@ export function Marketplace() {
           const nftsWithDetails = await Promise.all(
             allListings.map(async (listing: any) => {
               const tokenId =
-                listing.protocol_data?.parameters?.offer?.[0]
-                  ?.identifierOrCriteria;
+                listing.protocol_data?.parameters?.offer?.[0]?.identifierOrCriteria;
+              const contractAddress =
+                listing.protocol_data?.parameters?.offer?.[0]?.token;
 
-              const nftResponse = await fetch(
-                `https://api.opensea.io/api/v2/chain/ethereum/contract/0x07cd221b2fe54094277a2f4e1c1bc6df14e63678/nfts/${tokenId}`,
-                {
-                  headers: {
-                    "X-API-KEY": process.env.NEXT_PUBLIC_OPENSEA_API_KEY || "",
-                  },
-                }
-              );
+              try {
+                const nftResponse = await fetch(
+                  `https://eth-mainnet.g.alchemy.com/nft/v3/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}`,
+                  {
+                    headers: {
+                      accept: "application/json",
+                    },
+                  }
+                );
 
-              const nftData = await nftResponse.json();
+                const nftData = await nftResponse.json();
 
-              return {
-                tokenId,
-                name: nftData.nft?.name || `CryptoRasta #${tokenId}`,
-                image: nftData.nft?.image_url,
-                price: listing.price?.current?.value,
-                decimals: listing.price?.current?.decimals || 18,
-                orderHash: listing.order_hash,
-                protocolData: listing.protocol_data,
-              };
+                return {
+                  tokenId,
+                  name: nftData.name || `CryptoRasta #${tokenId}`,
+                  image: nftData.image?.cachedUrl || nftData.image?.originalUrl || "",
+                  price: listing.price.current.value,
+                  decimals: listing.price.current.decimals,
+                  orderHash: listing.order_hash,
+                  protocolAddress: listing.protocol_address,
+                };
+              } catch (error) {
+                console.error(`Error fetching NFT ${tokenId}:`, error);
+                return null;
+              }
             })
           );
 
-          setListings(nftsWithDetails);
+          setListings(nftsWithDetails.filter((nft) => nft !== null));
         }
-
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching listings:", error);
+      } finally {
         setLoading(false);
       }
     }
@@ -104,75 +107,42 @@ export function Marketplace() {
     setPurchasing(nft.tokenId);
 
     try {
-      const priceInEth = parseInt(nft.price) / Math.pow(10, nft.decimals);
+      const response = await fetch("/api/fulfill-listing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderHash: nft.orderHash,
+          walletAddress: account.address,
+        }),
+      });
 
-      const confirmation = confirm(
-        `Purchase ${nft.name} for ${priceInEth.toFixed(4)} ETH?\n\n` +
-          `Note: You'll need ETH in your wallet + gas fees (~$10-20).`
-      );
+      const result = await response.json();
 
-      if (!confirmation) {
-        setPurchasing(null);
-        return;
+      if (result.fulfillment_data?.transaction?.input_data?.data) {
+        const txData = result.fulfillment_data.transaction.input_data.data;
+
+        const transaction = prepareTransaction({
+          to: SEAPORT_ADDRESS,
+          chain: ethereum,
+          client: client,
+          data: txData,
+          value: BigInt(nft.price),
+        });
+
+        sendTransaction(transaction, {
+          onSuccess: (result) => {
+            alert(`Purchase successful!\n\nTransaction: ${result.transactionHash}`);
+            setPurchasing(null);
+          },
+          onError: (error) => {
+            console.error("Transaction failed:", error);
+            alert(`Transaction failed: ${error.message}`);
+            setPurchasing(null);
+          },
+        });
       }
-
-      console.log("Building Seaport transaction...");
-      console.log("Order data:", nft.protocolData);
-
-      const seaportContract = getContract({
-        client,
-        chain: ethereum,
-        address: SEAPORT_ADDRESS,
-      });
-
-      const params = nft.protocolData.parameters;
-
-      const basicOrderParameters = {
-        considerationToken: params.consideration[0].token,
-        considerationIdentifier: params.consideration[0].identifierOrCriteria,
-        considerationAmount: params.consideration[0].startAmount,
-        offerer: params.offerer,
-        zone: params.zone,
-        offerToken: params.offer[0].token,
-        offerIdentifier: params.offer[0].identifierOrCriteria,
-        offerAmount: params.offer[0].startAmount,
-        basicOrderType: 0,
-        startTime: params.startTime,
-        endTime: params.endTime,
-        zoneHash: params.zoneHash,
-        salt: params.salt,
-        offererConduitKey: params.conduitKey,
-        fulfillerConduitKey:
-          "0x0000000000000000000000000000000000000000000000000000000000000000",
-        totalOriginalAdditionalRecipients: params.consideration.length - 1,
-        additionalRecipients: params.consideration.slice(1).map((c: any) => ({
-          amount: c.startAmount,
-          recipient: c.recipient,
-        })),
-        signature: nft.protocolData.signature,
-      };
-
-      console.log("Sending transaction...");
-
-      const transaction = prepareTransaction({
-        to: SEAPORT_ADDRESS,
-        chain: ethereum,
-        client,
-        value: BigInt(nft.price),
-      });
-
-      sendTransaction(transaction, {
-        onSuccess: (result) => {
-          console.log("Success!", result);
-          alert(`NFT purchased! Transaction: ${result.transactionHash}`);
-          setPurchasing(null);
-        },
-        onError: (error) => {
-          console.error("Transaction failed:", error);
-          alert(`Transaction failed: ${error.message}`);
-          setPurchasing(null);
-        },
-      });
     } catch (error: any) {
       console.error("Purchase error:", error);
       alert(`Purchase failed: ${error.message || "Unknown error"}`);
@@ -190,8 +160,6 @@ export function Marketplace() {
 
     try {
       const priceInEth = parseInt(nft.price) / Math.pow(10, nft.decimals);
-
-      console.log("Creating PIX payment...");
 
       const response = await fetch("/api/create-pix-payment", {
         method: "POST",
@@ -230,20 +198,6 @@ export function Marketplace() {
     }
   };
 
-  const handleCardPayment = (nft: any) => {
-    if (!account) {
-      alert("Please connect your wallet first!");
-      return;
-    }
-    setCardPaymentNft(nft);
-  };
-
-  const getAmountInBRL = (nft: any) => {
-    const priceInEth = parseInt(nft.price) / Math.pow(10, nft.decimals);
-    const ethToBrl = 15000;
-    return Math.ceil(priceInEth * ethToBrl);
-  };
-
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -263,42 +217,6 @@ export function Marketplace() {
 
   return (
     <>
-      {/* Card Payment Modal */}
-      {cardPaymentNft && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b flex justify-between items-center">
-              <div>
-                <h2 className="font-bold text-lg">Buy {cardPaymentNft.name}</h2>
-                <p className="text-sm text-gray-600">
-                  R$ {getAmountInBRL(cardPaymentNft).toFixed(2)}
-                </p>
-              </div>
-              <button
-                onClick={() => setCardPaymentNft(null)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="p-4">
-              <CardPaymentForm
-                amount={getAmountInBRL(cardPaymentNft)}
-                onSuccess={(paymentId) => {
-                  alert(
-                    `Payment successful! ID: ${paymentId}\n\nYour NFT will be transferred shortly.`
-                  );
-                  setCardPaymentNft(null);
-                }}
-                onError={(error) => {
-                  alert(`Payment failed: ${error}`);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Pagination */}
       <div className="flex justify-center gap-4 mb-4">
         <button
@@ -375,17 +293,6 @@ export function Marketplace() {
                       }`}
                     >
                       Buy with PIX
-                    </button>
-                    <button
-                      onClick={() => handleCardPayment(nft)}
-                      disabled={purchasing === nft.tokenId}
-                      className={`w-full py-2 rounded-lg font-semibold ${
-                        purchasing === nft.tokenId
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-purple-500 hover:bg-purple-600 text-white"
-                      }`}
-                    >
-                      Buy with Credit Card
                     </button>
                   </div>
                 ) : (
