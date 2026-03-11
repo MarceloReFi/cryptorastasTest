@@ -122,7 +122,10 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
 
     try {
       console.log("🔄 Iniciando compra ETH...");
-      console.log("NFT:", nft.tokenId, "Preço:", nft.price);
+      console.log("NFT:", nft.tokenId);
+      console.log("Order Hash:", nft.orderHash);
+      console.log("Wallet:", account.address);
+      console.log("Preço:", nft.price);
 
       const response = await fetch("/api/fulfill-listing", {
         method: "POST",
@@ -135,27 +138,44 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         }),
       });
 
-      console.log("Status API:", response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Erro API:", errorText);
-        throw new Error(`Erro na API (${response.status})`);
-      }
+      console.log("📡 Status API:", response.status);
 
       const result = await response.json();
-      console.log("Resposta:", result);
+      console.log("📦 Resposta completa:", result);
 
       if (result.error) {
-        throw new Error(result.error);
+        console.error("❌ Erro da API:", result);
+        if (result.details && Array.isArray(result.details)) {
+          console.error("Detalhes dos erros:", result.details);
+          const errorMessages = result.details
+            .map((e: any) => e.message || JSON.stringify(e))
+            .join("\n");
+          throw new Error(`Erro OpenSea:\n${errorMessages}`);
+        }
+        throw new Error(result.message || result.error);
+      }
+
+      if (result.errors && Array.isArray(result.errors)) {
+        console.error("❌ Erros do OpenSea:", result.errors);
+        const errorMessages = result.errors
+          .map((e: any) => e.message || JSON.stringify(e))
+          .join("\n");
+        throw new Error(`OpenSea API Error:\n${errorMessages}`);
       }
 
       if (!result.fulfillment_data?.transaction?.input_data?.data) {
-        console.error("❌ Dados incompletos:", result);
-        throw new Error("Dados de transação não encontrados");
+        console.error("❌ Dados de transação ausentes:", result);
+        throw new Error(
+          "Dados de transação não encontrados.\n\n" +
+            "Possíveis causas:\n" +
+            "- NFT pode já ter sido vendido\n" +
+            "- Listing expirado\n" +
+            "- Problema com API OpenSea"
+        );
       }
 
       const txData = result.fulfillment_data.transaction.input_data.data;
+      console.log("✅ Dados de transação obtidos");
 
       const transaction = prepareTransaction({
         to: SEAPORT_ADDRESS,
@@ -169,19 +189,27 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
 
       sendTransaction(transaction, {
         onSuccess: (result) => {
-          console.log("✅ Sucesso:", result.transactionHash);
-          alert(`✅ Compra realizada!\n\nHash: ${result.transactionHash}`);
+          console.log("✅ Compra bem-sucedida:", result.transactionHash);
+          alert(`✅ Compra realizada com sucesso!\n\nTransação: ${result.transactionHash}`);
           setPurchasing(null);
         },
         onError: (error) => {
-          console.error("❌ Falha na transação:", error);
-          alert(`❌ Transação falhou:\n${error.message}\n\nVerifique se tem ETH suficiente.`);
+          console.error("❌ Transação falhou:", error);
+          alert(
+            `❌ Transação falhou:\n\n${error.message}\n\n` +
+              `Verifique:\n` +
+              `- Você tem ETH suficiente?\n` +
+              `- Aprovou a transação na wallet?`
+          );
           setPurchasing(null);
         },
       });
     } catch (error: any) {
-      console.error("💥 Erro:", error);
-      alert(`❌ Erro: ${error.message}\n\nVerifique o console (F12) para detalhes.`);
+      console.error("💥 Erro na compra:", error);
+      alert(
+        `❌ Erro ao processar compra:\n\n${error.message}\n\n` +
+          `Verifique o console (F12) para mais detalhes.`
+      );
       setPurchasing(null);
     }
   };
