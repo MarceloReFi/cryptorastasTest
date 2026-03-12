@@ -15,7 +15,7 @@ const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
 });
 
-const SEAPORT_ADDRESS = "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
+const SEAPORT_1_6_ADDRESS = "0x0000000000000068F116a894984e2DB1123eB395";
 
 export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [listings, setListings] = useState<any[]>([]);
@@ -103,7 +103,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
                 orderHash: listing.order_hash,
                 protocolAddress:
                   listing.protocol_address ||
-                  "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
+                  SEAPORT_1_6_ADDRESS,
                 fullOrder: listing,
               };
             } catch (error) {
@@ -180,19 +180,42 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         throw new Error(result.error);
       }
 
-      if (!result.fulfillment_data?.transaction?.input_data?.data) {
-        throw new Error("Dados de transação não encontrados");
+      const txData =
+        result.fulfillment_data?.transaction?.data ||
+        result.fulfillment_data?.transaction?.input_data?.data ||
+        result.fulfillment_data?.transaction?.input_data?.calldata ||
+        result.fulfillment_data?.transaction?.input;
+
+      const txTo =
+        result.fulfillment_data?.transaction?.to ||
+        nft.protocolAddress ||
+        SEAPORT_1_6_ADDRESS;
+
+      const txValue =
+        result.fulfillment_data?.transaction?.value !== undefined
+          ? result.fulfillment_data.transaction.value
+          : nft.price;
+
+      if (!txData) {
+        console.error("❌ Estrutura completa do fulfillment_data:");
+        console.error(JSON.stringify(result, null, 2));
+        throw new Error(
+          "Dados de transação não encontrados.\n\n" +
+            "Veja o console (F12) para detalhes da estrutura."
+        );
       }
 
-      const txData = result.fulfillment_data.transaction.input_data.data;
-      console.log("✅ Dados de transação obtidos");
+      console.log("✅ Dados encontrados:");
+      console.log("  - to:", txTo);
+      console.log("  - value:", txValue);
+      console.log("  - data:", txData.substring(0, 66) + "...");
 
       const transaction = prepareTransaction({
-        to: SEAPORT_ADDRESS,
+        to: txTo,
         chain: ethereum,
         client: client,
         data: txData,
-        value: BigInt(nft.price),
+        value: BigInt(txValue),
       });
 
       console.log("📤 Enviando transação via Thirdweb...");
