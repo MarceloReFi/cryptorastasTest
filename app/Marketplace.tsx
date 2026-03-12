@@ -349,7 +349,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
       <div className="text-center py-12">
         <div className="space-y-4">
           <p className="text-gray-600">
-            {error ?? "Nenhuma CryptoRasta disponível no momento"}
+            {error ?? "Nenhum Cryptorasta disponível no momento"}
           </p>
           <button
             onClick={() => { setError(null); refreshListings(); }}
