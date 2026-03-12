@@ -12,6 +12,7 @@ declare global {
 export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
@@ -27,10 +28,12 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   useEffect(() => {
     async function fetchListings() {
       try {
+        setError(null);
+
         const url =
           "https://api.opensea.io/api/v2/orders/ethereum/seaport/listings" +
           "?asset_contract_address=0x07cd221b2fe54094277a2f4e1c1bc6df14e63678" +
-          "&limit=50&order_by=eth_price&order_direction=asc";
+          "&limit=50";
 
         console.log("🔍 Buscando orders ativos...");
 
@@ -40,6 +43,14 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
             "Content-Type": "application/json",
           },
         });
+
+        if (!response.ok) {
+          console.error("❌ Erro na API OpenSea:", response.status, response.statusText);
+          const errorText = await response.text();
+          console.error("Detalhes do erro:", errorText);
+          setListings([]);
+          return;
+        }
 
         const data = await response.json();
         console.log("📊 Orders response:", data);
@@ -101,6 +112,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         setListings(validListings);
       } catch (error) {
         console.error("Error fetching listings:", error);
+        setError("Erro ao buscar NFTs. Tente novamente.");
       } finally {
         setLoading(false);
       }
@@ -256,9 +268,11 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     return (
       <div className="text-center py-12">
         <div className="space-y-4">
-          <p className="text-gray-600">Nenhuma CryptoRasta disponível no momento</p>
+          <p className="text-gray-600">
+            {error ?? "Nenhuma CryptoRasta disponível no momento"}
+          </p>
           <button
-            onClick={refreshListings}
+            onClick={() => { setError(null); refreshListings(); }}
             className="px-6 py-3 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark transition-all shadow-md"
           >
             🔄 Atualizar Listagens
@@ -322,7 +336,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
           {listings.length} NFTs disponíveis
         </p>
         <button
-          onClick={refreshListings}
+          onClick={() => { setError(null); refreshListings(); }}
           className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all text-sm"
         >
           🔄 Atualizar
