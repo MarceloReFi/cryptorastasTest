@@ -64,7 +64,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         console.log("📊 Listings response:", data);
 
         if (!data.listings || data.listings.length === 0) {
-          console.warn("⚠️ Nenhum listing ativo encontrado");
+          console.warn("⚠️ Nenhum Cryptorasta disponível");
           setListings([]);
           return;
         }
@@ -96,7 +96,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
 
               return {
                 tokenId,
-                name: nftData.name || `CryptoRasta #${tokenId}`,
+                name: nftData.name || `Cryptorasta #${tokenId}`,
                 image: nftData.image?.cachedUrl || nftData.image?.originalUrl || "",
                 price: listing.price?.current?.value || "0",
                 decimals: listing.price?.current?.decimals || 18,
@@ -339,7 +339,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Carregando marketplace...</p>
+        <p className="mt-4 text-gray-600">Carregando Cryptorastas...</p>
       </div>
     );
   }
@@ -349,7 +349,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
       <div className="text-center py-12">
         <div className="space-y-4">
           <p className="text-gray-600">
-            {error ?? "Nenhuma CryptoRasta disponível no momento"}
+            {error ?? "Nenhum Cryptorasta disponível no momento"}
           </p>
           <button
             onClick={() => { setError(null); refreshListings(); }}
