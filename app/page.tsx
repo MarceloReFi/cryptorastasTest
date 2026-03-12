@@ -54,7 +54,7 @@ export default function Home() {
               wallets={[
                 inAppWallet({
                   auth: {
-                    options: ["email", "wallet"],
+                    options: ["email", "google", "wallet"],
                   },
                 }),
               ]}
