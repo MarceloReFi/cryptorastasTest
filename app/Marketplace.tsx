@@ -180,42 +180,89 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         throw new Error(result.error);
       }
 
-      const txData =
-        result.fulfillment_data?.transaction?.data ||
-        result.fulfillment_data?.transaction?.input_data?.data ||
-        result.fulfillment_data?.transaction?.input_data?.calldata ||
-        result.fulfillment_data?.transaction?.input;
-
-      const txTo =
-        result.fulfillment_data?.transaction?.to ||
-        nft.protocolAddress ||
-        SEAPORT_1_6_ADDRESS;
-
-      const txValue =
-        result.fulfillment_data?.transaction?.value !== undefined
-          ? result.fulfillment_data.transaction.value
-          : nft.price;
-
-      if (!txData) {
-        console.error("❌ Estrutura completa do fulfillment_data:");
-        console.error(JSON.stringify(result, null, 2));
-        throw new Error(
-          "Dados de transação não encontrados.\n\n" +
-            "Veja o console (F12) para detalhes da estrutura."
-        );
+      if (!result.fulfillment_data?.transaction) {
+        console.error("❌ Estrutura completa:", JSON.stringify(result, null, 2));
+        throw new Error("Dados de transação não encontrados");
       }
 
-      console.log("✅ Dados encontrados:");
-      console.log("  - to:", txTo);
-      console.log("  - value:", txValue);
-      console.log("  - data:", txData.substring(0, 66) + "...");
+      const txInfo = result.fulfillment_data.transaction;
+      const params = txInfo.input_data?.parameters;
+
+      if (!params) {
+        console.error("❌ Transaction info:", JSON.stringify(txInfo, null, 2));
+        throw new Error("Parâmetros de transação não encontrados");
+      }
+
+      console.log("✅ Parâmetros obtidos");
+      console.log("  - Function:", txInfo.function);
+      console.log("  - To:", txInfo.to);
+      console.log("  - Value:", txInfo.value);
+
+      const { ethers } = await import("ethers");
+
+      const abi = [
+        `function fulfillBasicOrder_efficient_6GL6yc(
+          tuple(
+            address considerationToken,
+            uint256 considerationIdentifier,
+            uint256 considerationAmount,
+            address offerer,
+            address zone,
+            address offerToken,
+            uint256 offerIdentifier,
+            uint256 offerAmount,
+            uint8 basicOrderType,
+            uint256 startTime,
+            uint256 endTime,
+            bytes32 zoneHash,
+            uint256 salt,
+            bytes32 offererConduitKey,
+            bytes32 fulfillerConduitKey,
+            uint256 totalOriginalAdditionalRecipients,
+            tuple(uint256 amount, address recipient)[] additionalRecipients,
+            bytes signature
+          ) parameters
+        ) external payable returns (bool)`,
+      ];
+
+      const iface = new ethers.Interface(abi);
+
+      const basicOrderParams = {
+        considerationToken: params.considerationToken,
+        considerationIdentifier: params.considerationIdentifier,
+        considerationAmount: params.considerationAmount,
+        offerer: params.offerer,
+        zone: params.zone,
+        offerToken: params.offerToken,
+        offerIdentifier: params.offerIdentifier,
+        offerAmount: params.offerAmount,
+        basicOrderType: params.basicOrderType,
+        startTime: params.startTime,
+        endTime: params.endTime,
+        zoneHash: params.zoneHash,
+        salt: params.salt,
+        offererConduitKey: params.offererConduitKey,
+        fulfillerConduitKey: params.fulfillerConduitKey,
+        totalOriginalAdditionalRecipients: params.totalOriginalAdditionalRecipients,
+        additionalRecipients: params.additionalRecipients || [],
+        signature: params.signature,
+      };
+
+      const txData = iface.encodeFunctionData(
+        "fulfillBasicOrder_efficient_6GL6yc",
+        [basicOrderParams]
+      );
+
+      console.log("✅ Calldata encodado com sucesso!");
+      console.log("  - Data length:", txData.length);
+      console.log("  - Data preview:", txData.substring(0, 66) + "...");
 
       const transaction = prepareTransaction({
-        to: txTo,
+        to: txInfo.to,
         chain: ethereum,
         client: client,
-        data: txData,
-        value: BigInt(txValue),
+        data: txData as `0x${string}`,
+        value: BigInt(txInfo.value),
       });
 
       console.log("📤 Enviando transação via Thirdweb...");
