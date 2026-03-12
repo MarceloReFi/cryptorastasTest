@@ -90,7 +90,6 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
   if (nfts.length === 0) {
     return (
       <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-8 text-center">
-        <div className="text-4xl mb-4">🎨</div>
         <h3 className="text-xl font-bold text-gray-800 mb-2">
           Nenhuma CryptoRasta encontrada
         </h3>
