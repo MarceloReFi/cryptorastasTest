@@ -1,16 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useActiveAccount, useSendTransaction } from "thirdweb/react";
-import { prepareTransaction } from "thirdweb";
-import { ethereum } from "thirdweb/chains";
-import { createThirdwebClient } from "thirdweb";
+import { useActiveAccount } from "thirdweb/react";
 
-const client = createThirdwebClient({
-  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
-});
-
-const SEAPORT_ADDRESS = "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 
 export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [listings, setListings] = useState<any[]>([]);
@@ -26,78 +23,82 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   } | null>(null);
   const ITEMS_PER_PAGE = itemsPerPage;
   const account = useActiveAccount();
-  const { mutate: sendTransaction } = useSendTransaction();
 
   useEffect(() => {
     async function fetchListings() {
       try {
-        let allListings: any[] = [];
-        let nextCursor: string | null = null;
-        let fetchCount = 0;
-        const maxFetches = 5;
+        const url =
+          "https://api.opensea.io/api/v2/orders/ethereum/seaport/listings" +
+          "?asset_contract_address=0x07cd221b2fe54094277a2f4e1c1bc6df14e63678" +
+          "&limit=50&order_by=eth_price&order_direction=asc";
 
-        do {
-          const url: string = nextCursor
-            ? `https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=20&next=${nextCursor}`
-            : "https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=20";
+        console.log("🔍 Buscando orders ativos...");
 
-          const response = await fetch(url, {
-            headers: {
-              "X-API-KEY": process.env.NEXT_PUBLIC_OPENSEA_API_KEY || "",
-            },
-          });
+        const response = await fetch(url, {
+          headers: {
+            "X-API-KEY": process.env.NEXT_PUBLIC_OPENSEA_API_KEY || "",
+            "Content-Type": "application/json",
+          },
+        });
 
-          const data = await response.json();
+        const data = await response.json();
+        console.log("📊 Orders response:", data);
 
-          if (data.listings) {
-            allListings = [...allListings, ...data.listings];
-          }
+        if (!data.orders || data.orders.length === 0) {
+          console.warn("⚠️ Nenhum order ativo encontrado");
+          setListings([]);
+          return;
+        }
 
-          nextCursor = data.next || null;
-          fetchCount++;
-        } while (nextCursor && fetchCount < maxFetches);
+        const allListings = data.orders;
+        console.log(`📦 Total de ${allListings.length} orders ativos recebidos`);
 
-        if (allListings.length > 0) {
-          console.log(`📊 Total de listings encontrados: ${allListings.length}`);
-          const nftsWithDetails = await Promise.all(
-            allListings.map(async (listing: any) => {
+        const nftsWithDetails = await Promise.all(
+          allListings.map(async (order: any) => {
+            try {
               const tokenId =
-                listing.protocol_data?.parameters?.offer?.[0]?.identifierOrCriteria;
+                order.maker_asset_bundle?.assets?.[0]?.token_id ||
+                order.protocol_data?.parameters?.offer?.[0]?.identifierOrCriteria;
+
               const contractAddress =
-                listing.protocol_data?.parameters?.offer?.[0]?.token;
+                order.maker_asset_bundle?.assets?.[0]?.asset_contract?.address ||
+                order.protocol_data?.parameters?.offer?.[0]?.token ||
+                "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
 
-              try {
-                const nftResponse = await fetch(
-                  `https://eth-mainnet.g.alchemy.com/nft/v3/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}`,
-                  {
-                    headers: {
-                      accept: "application/json",
-                    },
-                  }
-                );
-
-                const nftData = await nftResponse.json();
-
-                return {
-                  tokenId,
-                  name: nftData.name || `CryptoRasta #${tokenId}`,
-                  image: nftData.image?.cachedUrl || nftData.image?.originalUrl || "",
-                  price: listing.price.current.value,
-                  decimals: listing.price.current.decimals,
-                  orderHash: listing.order_hash,
-                  protocolAddress: listing.protocol_address,
-                };
-              } catch (error) {
-                console.error(`Error fetching NFT ${tokenId}:`, error);
+              if (!tokenId) {
+                console.warn("⚠️ Order sem token_id:", order.order_hash);
                 return null;
               }
-            })
-          );
 
-          const validListings = nftsWithDetails.filter((nft) => nft !== null);
-          console.log(`✅ ${validListings.length} NFTs válidos carregados`);
-          setListings(validListings);
-        }
+              const nftResponse = await fetch(
+                `https://eth-mainnet.g.alchemy.com/nft/v3/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}`,
+                { headers: { accept: "application/json" } }
+              );
+
+              const nftData = await nftResponse.json();
+
+              return {
+                tokenId,
+                name: nftData.name || `CryptoRasta #${tokenId}`,
+                image: nftData.image?.cachedUrl || nftData.image?.originalUrl || "",
+                price: order.current_price || order.base_price,
+                decimals: 18,
+                orderHash: order.order_hash,
+                protocolAddress:
+                  order.protocol_address ||
+                  "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
+                fullOrder: order,
+              };
+            } catch (error) {
+              console.error("❌ Erro processando order:", error);
+              return null;
+            }
+          })
+        );
+
+        const validListings = nftsWithDetails.filter((nft) => nft !== null);
+        console.log(`✅ ${validListings.length} NFTs válidos carregados`);
+        setListings(validListings);
       } catch (error) {
         console.error("Error fetching listings:", error);
       } finally {
@@ -134,104 +135,66 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     setPurchasing(nft.tokenId);
 
     try {
-      console.log("🔄 Iniciando compra ETH...");
+      console.log("🔄 Iniciando compra com OpenSea SDK...");
       console.log("NFT:", nft.tokenId);
       console.log("Order Hash:", nft.orderHash);
-      console.log("Wallet:", account.address);
-      console.log("Preço:", nft.price);
 
-      const response = await fetch("/api/fulfill-listing", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderHash: nft.orderHash,
-          walletAddress: account.address,
-          protocolAddress: nft.protocolAddress,
-        }),
-      });
-
-      console.log("📡 Status API:", response.status);
-
-      const result = await response.json();
-      console.log("📦 Resposta completa:", result);
-
-      if (result.error) {
-        console.error("❌ Erro da API:", result);
-
-        const errorMsg = result.details
-          ? result.details.map((e: any) => e.message || JSON.stringify(e)).join("\n")
-          : result.message || result.error;
-
-        // NFT genuinamente esgotado — remover da lista
-        if (typeof errorMsg === "string" && /order not found|not found/i.test(errorMsg)) {
-          console.warn("⚠️ Listing expirado ou já vendido:", errorMsg);
-          removeInvalidListing(nft.tokenId);
-          alert("❌ Este NFT já foi vendido ou não está mais disponível.\n\nA lista foi atualizada. Por favor, escolha outro NFT.");
-          setPurchasing(null);
-          return;
-        }
-
-        throw new Error(errorMsg);
-      }
-
-      if (result.errors && Array.isArray(result.errors)) {
-        console.error("❌ Erros do OpenSea:", result.errors);
-        const errorMessages = result.errors
-          .map((e: any) => e.message || JSON.stringify(e))
-          .join("\n");
-        throw new Error(`OpenSea API Error:\n${errorMessages}`);
-      }
-
-      if (!result.fulfillment_data?.transaction?.input_data?.data) {
-        console.error("❌ Dados de transação ausentes:", result);
+      if (!window.ethereum) {
         throw new Error(
-          "Dados de transação não encontrados.\n\n" +
-            "Possíveis causas:\n" +
-            "- NFT pode já ter sido vendido\n" +
-            "- Listing expirado\n" +
-            "- Problema com API OpenSea"
+          "MetaMask não encontrado. Por favor, instale MetaMask para continuar."
         );
       }
 
-      const txData = result.fulfillment_data.transaction.input_data.data;
-      console.log("✅ Dados de transação obtidos");
+      const { BrowserProvider } = await import("ethers");
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
-      const transaction = prepareTransaction({
-        to: SEAPORT_ADDRESS,
-        chain: ethereum,
-        client: client,
-        data: txData,
-        value: BigInt(nft.price),
+      console.log("📦 Inicializando OpenSea SDK...");
+      const { OpenSeaSDK, Chain } = await import("opensea-js");
+
+      const sdk = new OpenSeaSDK(signer, {
+        chain: Chain.Mainnet,
+        apiKey: process.env.NEXT_PUBLIC_OPENSEA_API_KEY,
       });
 
-      console.log("📤 Enviando transação...");
-
-      sendTransaction(transaction, {
-        onSuccess: (result) => {
-          console.log("✅ Compra bem-sucedida:", result.transactionHash);
-          alert(`✅ Compra realizada com sucesso!\n\nTransação: ${result.transactionHash}`);
-          removeInvalidListing(nft.tokenId);
-          setPurchasing(null);
-        },
-        onError: (error) => {
-          console.error("❌ Transação falhou:", error);
-          alert(
-            `❌ Transação falhou:\n\n${error.message}\n\n` +
-              `Verifique:\n` +
-              `- Você tem ETH suficiente?\n` +
-              `- Aprovou a transação na wallet?`
-          );
-          setPurchasing(null);
-        },
+      console.log("🔍 Executando order...");
+      console.log("📤 Executando transação...");
+      const txHash = await sdk.fulfillOrder({
+        order: nft.fullOrder,
+        accountAddress: account.address,
       });
+
+      console.log("✅ Transação enviada:", txHash);
+
+      alert(
+        `✅ Compra realizada com sucesso!\n\n` +
+          `Hash da transação: ${txHash}\n\n` +
+          `Aguarde alguns minutos para o NFT aparecer na sua carteira.`
+      );
+
+      removeInvalidListing(nft.tokenId);
+      setPurchasing(null);
     } catch (error: any) {
       console.error("💥 Erro na compra:", error);
-      alert(
-        `❌ Erro ao processar compra:\n\n${error.message}\n\n` +
-          `Verifique o console (F12) para mais detalhes.`
-      );
+
+      let errorMessage = error.message || "Erro desconhecido";
+
+      if (
+        errorMessage.includes("user rejected") ||
+        errorMessage.includes("User denied")
+      ) {
+        errorMessage = "Você rejeitou a transação na sua carteira.";
+      } else if (errorMessage.includes("insufficient funds")) {
+        errorMessage = "Saldo insuficiente de ETH na sua carteira.";
+      } else if (
+        errorMessage.includes("Order not found") ||
+        errorMessage.includes("not found")
+      ) {
+        errorMessage = "NFT já foi vendido. A lista será atualizada.";
+        removeInvalidListing(nft.tokenId);
+      }
+
+      alert(`❌ Erro ao comprar NFT:\n\n${errorMessage}`);
       setPurchasing(null);
     }
   };
