@@ -87,7 +87,7 @@ export default function Home() {
           <div className="space-y-6">
             {/* Minhas CryptoRastas */}
             <div className="bg-white p-6 rounded-lg shadow-2xl">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900">Minhas CryptoRastas</h2>
+              <h2 className="text-2xl font-bold mb-4 text-gray-900"> Meus CryptoRastas</h2>
               <NFTGallery
                 walletAddress={account.address}
                 itemsPerPage={isMobile ? 10 : 20}
