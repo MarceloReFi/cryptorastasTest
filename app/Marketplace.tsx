@@ -148,6 +148,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         body: JSON.stringify({
           orderHash: nft.orderHash,
           walletAddress: account.address,
+          protocolAddress: nft.protocolAddress,
         }),
       });
 
@@ -156,28 +157,23 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
       const result = await response.json();
       console.log("📦 Resposta completa:", result);
 
-      // Verificar se o erro é "Order not found"
-      if (result.error && result.message && result.message.includes("Order not found")) {
-        console.warn("⚠️ Listing expirado ou já vendido");
-        removeInvalidListing(nft.tokenId);
-        alert(
-          "❌ Este NFT já foi vendido ou não está mais disponível.\n\n" +
-            "A lista foi atualizada. Por favor, escolha outro NFT."
-        );
-        setPurchasing(null);
-        return;
-      }
-
       if (result.error) {
         console.error("❌ Erro da API:", result);
-        if (result.details && Array.isArray(result.details)) {
-          console.error("Detalhes dos erros:", result.details);
-          const errorMessages = result.details
-            .map((e: any) => e.message || JSON.stringify(e))
-            .join("\n");
-          throw new Error(`Erro OpenSea:\n${errorMessages}`);
+
+        const errorMsg = result.details
+          ? result.details.map((e: any) => e.message || JSON.stringify(e)).join("\n")
+          : result.message || result.error;
+
+        // NFT genuinamente esgotado — remover da lista
+        if (typeof errorMsg === "string" && /order not found|not found/i.test(errorMsg)) {
+          console.warn("⚠️ Listing expirado ou já vendido:", errorMsg);
+          removeInvalidListing(nft.tokenId);
+          alert("❌ Este NFT já foi vendido ou não está mais disponível.\n\nA lista foi atualizada. Por favor, escolha outro NFT.");
+          setPurchasing(null);
+          return;
         }
-        throw new Error(result.message || result.error);
+
+        throw new Error(errorMsg);
       }
 
       if (result.errors && Array.isArray(result.errors)) {
