@@ -72,7 +72,7 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
         <div className="relative">
           <div className="w-12 h-12 border-4 border-green-200 rounded-full animate-spin border-t-green-600"></div>
           <p className="text-gray-600 mt-4 text-center">
-            Carregando suas CryptoRastas...
+            Carregando seus Cryptorastas...
           </p>
         </div>
       </div>
@@ -91,13 +91,13 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
     return (
       <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-8 text-center">
         <h3 className="text-xl font-bold text-gray-800 mb-2">
-          Nenhuma CryptoRasta encontrada
+          Nenhum Cryptorasta encontrado
         </h3>
         <p className="text-gray-600">
-          Você ainda não tem CryptoRastas nesta carteira.
+          Você ainda não tem Cryptorastas nesta carteira.
         </p>
         <p className="text-sm text-gray-500 mt-2">
-          Compre a sua no marketplace!
+          Adquira a sua no marketplace!
         </p>
       </div>
     );
