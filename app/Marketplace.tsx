@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useActiveAccount } from "thirdweb/react";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { prepareTransaction, createThirdwebClient } from "thirdweb";
+import { ethereum } from "thirdweb/chains";
 
 declare global {
   interface Window {
     ethereum?: any;
   }
 }
+
+const client = createThirdwebClient({
+  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
+});
+
+const SEAPORT_ADDRESS = "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
 
 export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [listings, setListings] = useState<any[]>([]);
@@ -24,6 +32,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   } | null>(null);
   const ITEMS_PER_PAGE = itemsPerPage;
   const account = useActiveAccount();
+  const { mutate: sendTransaction } = useSendTransaction();
 
   useEffect(() => {
     async function fetchListings() {
@@ -144,66 +153,70 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     setPurchasing(nft.tokenId);
 
     try {
-      console.log("🔄 Iniciando compra com OpenSea SDK...");
+      console.log("🔄 Iniciando compra...");
       console.log("NFT:", nft.tokenId);
       console.log("Order Hash:", nft.orderHash);
 
-      if (!window.ethereum) {
-        throw new Error(
-          "MetaMask não encontrado. Por favor, instale MetaMask para continuar."
-        );
+      const response = await fetch("/api/fulfill-listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderHash: nft.orderHash,
+          walletAddress: account.address,
+          protocolAddress: nft.protocolAddress,
+        }),
+      });
+
+      const result = await response.json();
+      console.log("📦 Resposta da API:", result);
+
+      if (result.error) {
+        if (result.error.includes("not found")) {
+          removeInvalidListing(nft.tokenId);
+          alert("❌ Este NFT já foi vendido. A lista será atualizada.");
+          setPurchasing(null);
+          return;
+        }
+        throw new Error(result.error);
       }
 
-      const { BrowserProvider } = await import("ethers");
-      const provider = new BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
+      if (!result.fulfillment_data?.transaction?.input_data?.data) {
+        throw new Error("Dados de transação não encontrados");
+      }
 
-      console.log("📦 Inicializando OpenSea SDK...");
-      const { OpenSeaSDK, Chain } = await import("opensea-js");
+      const txData = result.fulfillment_data.transaction.input_data.data;
+      console.log("✅ Dados de transação obtidos");
 
-      const sdk = new OpenSeaSDK(signer, {
-        chain: Chain.Mainnet,
-        apiKey: process.env.NEXT_PUBLIC_OPENSEA_API_KEY,
+      const transaction = prepareTransaction({
+        to: SEAPORT_ADDRESS,
+        chain: ethereum,
+        client: client,
+        data: txData,
+        value: BigInt(nft.price),
       });
 
-      console.log("🔍 Executando order...");
-      console.log("📤 Executando transação...");
-      const txHash = await sdk.fulfillOrder({
-        order: nft.fullOrder,
-        accountAddress: account.address,
+      console.log("📤 Enviando transação via Thirdweb...");
+
+      sendTransaction(transaction, {
+        onSuccess: (result) => {
+          console.log("✅ Compra bem-sucedida:", result.transactionHash);
+          alert(
+            `✅ Compra realizada com sucesso!\n\n` +
+              `Transação: ${result.transactionHash}\n\n` +
+              `O NFT aparecerá na sua carteira em alguns minutos.`
+          );
+          removeInvalidListing(nft.tokenId);
+          setPurchasing(null);
+        },
+        onError: (error) => {
+          console.error("❌ Transação falhou:", error);
+          alert(`❌ Transação falhou:\n\n${error.message}`);
+          setPurchasing(null);
+        },
       });
-
-      console.log("✅ Transação enviada:", txHash);
-
-      alert(
-        `✅ Compra realizada com sucesso!\n\n` +
-          `Hash da transação: ${txHash}\n\n` +
-          `Aguarde alguns minutos para o NFT aparecer na sua carteira.`
-      );
-
-      removeInvalidListing(nft.tokenId);
-      setPurchasing(null);
     } catch (error: any) {
       console.error("💥 Erro na compra:", error);
-
-      let errorMessage = error.message || "Erro desconhecido";
-
-      if (
-        errorMessage.includes("user rejected") ||
-        errorMessage.includes("User denied")
-      ) {
-        errorMessage = "Você rejeitou a transação na sua carteira.";
-      } else if (errorMessage.includes("insufficient funds")) {
-        errorMessage = "Saldo insuficiente de ETH na sua carteira.";
-      } else if (
-        errorMessage.includes("Order not found") ||
-        errorMessage.includes("not found")
-      ) {
-        errorMessage = "NFT já foi vendido. A lista será atualizada.";
-        removeInvalidListing(nft.tokenId);
-      }
-
-      alert(`❌ Erro ao comprar NFT:\n\n${errorMessage}`);
+      alert(`❌ Erro ao processar compra:\n\n${error.message}`);
       setPurchasing(null);
     }
   };
