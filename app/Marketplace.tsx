@@ -31,11 +31,10 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         setError(null);
 
         const url =
-          "https://api.opensea.io/api/v2/orders/ethereum/seaport/listings" +
-          "?asset_contract_address=0x07cd221b2fe54094277a2f4e1c1bc6df14e63678" +
-          "&limit=50";
+          "https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all" +
+          "?limit=50";
 
-        console.log("🔍 Buscando orders ativos...");
+        console.log("🔍 Buscando listings ativos...");
 
         const response = await fetch(url, {
           headers: {
@@ -53,31 +52,29 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         }
 
         const data = await response.json();
-        console.log("📊 Orders response:", data);
+        console.log("📊 Listings response:", data);
 
-        if (!data.orders || data.orders.length === 0) {
-          console.warn("⚠️ Nenhum order ativo encontrado");
+        if (!data.listings || data.listings.length === 0) {
+          console.warn("⚠️ Nenhum listing ativo encontrado");
           setListings([]);
           return;
         }
 
-        const allListings = data.orders;
-        console.log(`📦 Total de ${allListings.length} orders ativos recebidos`);
+        const allListings = data.listings;
+        console.log(`📦 Total de ${allListings.length} listings ativos recebidos`);
 
         const nftsWithDetails = await Promise.all(
-          allListings.map(async (order: any) => {
+          allListings.map(async (listing: any) => {
             try {
               const tokenId =
-                order.maker_asset_bundle?.assets?.[0]?.token_id ||
-                order.protocol_data?.parameters?.offer?.[0]?.identifierOrCriteria;
+                listing.protocol_data?.parameters?.offer?.[0]?.identifierOrCriteria;
 
               const contractAddress =
-                order.maker_asset_bundle?.assets?.[0]?.asset_contract?.address ||
-                order.protocol_data?.parameters?.offer?.[0]?.token ||
+                listing.protocol_data?.parameters?.offer?.[0]?.token ||
                 "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
 
               if (!tokenId) {
-                console.warn("⚠️ Order sem token_id:", order.order_hash);
+                console.warn("⚠️ Listing sem token_id:", listing.order_hash);
                 return null;
               }
 
@@ -92,16 +89,16 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
                 tokenId,
                 name: nftData.name || `CryptoRasta #${tokenId}`,
                 image: nftData.image?.cachedUrl || nftData.image?.originalUrl || "",
-                price: order.current_price || order.base_price,
-                decimals: 18,
-                orderHash: order.order_hash,
+                price: listing.price?.current?.value || "0",
+                decimals: listing.price?.current?.decimals || 18,
+                orderHash: listing.order_hash,
                 protocolAddress:
-                  order.protocol_address ||
+                  listing.protocol_address ||
                   "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC",
-                fullOrder: order,
+                fullOrder: listing,
               };
             } catch (error) {
-              console.error("❌ Erro processando order:", error);
+              console.error("❌ Erro processando listing:", error);
               return null;
             }
           })
