@@ -24,12 +24,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
-  const [pixModal, setPixModal] = useState<{
-    payment_id: string;
-    amount_brl: number;
-    qr_code?: string;
-    ticket_url?: string;
-  } | null>(null);
+  const [showPixSoon, setShowPixSoon] = useState(false);
   const ITEMS_PER_PAGE = itemsPerPage;
   const account = useActiveAccount();
   const { mutate: sendTransaction } = useSendTransaction();
@@ -134,14 +129,6 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
 
   const removeInvalidListing = (tokenId: string) => {
     setListings((prev) => prev.filter((nft) => nft.tokenId !== tokenId));
-  };
-
-  const closePixModal = () => setPixModal(null);
-
-  const openPixQRCode = () => {
-    if (pixModal?.ticket_url) {
-      window.open(pixModal.ticket_url, "_blank");
-    }
   };
 
   const handlePurchase = async (nft: any) => {
@@ -291,48 +278,8 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     }
   };
 
-  const handlePixPayment = async (nft: any) => {
-    if (!account) {
-      alert("Por favor, conecte sua carteira primeiro!");
-      return;
-    }
-
-    setPurchasing(nft.tokenId);
-
-    try {
-      const priceInEth = parseInt(nft.price) / Math.pow(10, nft.decimals);
-
-      const response = await fetch("/api/create-pix-payment", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nftTokenId: nft.tokenId,
-          nftPrice: priceInEth.toFixed(4),
-          walletAddress: account.address,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      setPixModal({
-        payment_id: data.payment_id,
-        amount_brl: data.amount_brl,
-        qr_code: data.qr_code,
-        ticket_url: data.ticket_url,
-      });
-
-      setPurchasing(null);
-    } catch (error: any) {
-      console.error("PIX payment error:", error);
-      alert(`Falha ao criar pagamento PIX: ${error.message}`);
-      setPurchasing(null);
-    }
+  const handlePixPayment = () => {
+    setShowPixSoon(true);
   };
 
   if (loading) {
@@ -364,48 +311,23 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
 
   return (
     <>
-      {/* Modal PIX */}
-      {pixModal && (
+      {/* Modal PIX - Em Breve */}
+      {showPixSoon && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Pagamento PIX Criado
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+            <div className="text-5xl mb-4">⏳</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Em Breve!
             </h3>
-
-            <div className="space-y-3 mb-6">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-sm text-gray-600">Valor:</p>
-                <p className="text-2xl font-bold text-green-600">
-                  R$ {pixModal.amount_brl.toFixed(2)}
-                </p>
-              </div>
-
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <p className="text-sm text-gray-600">ID do Pagamento:</p>
-                <p className="text-xs font-mono text-gray-800 break-all">
-                  {pixModal.payment_id}
-                </p>
-              </div>
-
-              <p className="text-sm text-gray-600 text-center">
-                Clique em &quot;Abrir QR Code&quot; para escanear ou copiar o código PIX
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={closePixModal}
-                className="flex-1 py-3 px-4 rounded-lg font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
-              >
-                Fechar
-              </button>
-              <button
-                onClick={openPixQRCode}
-                className="flex-1 py-3 px-4 rounded-lg font-bold bg-rasta-yellow text-black hover:bg-rasta-yellow-dark transition-all shadow-md"
-              >
-                Abrir QR Code PIX
-              </button>
-            </div>
+            <p className="text-gray-600 mb-6">
+              O pagamento via PIX estará disponível em breve. Fique ligado!
+            </p>
+            <button
+              onClick={() => setShowPixSoon(false)}
+              className="w-full py-3 px-4 rounded-lg font-bold bg-rasta-yellow text-black hover:bg-rasta-yellow-dark transition-all shadow-md"
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}
@@ -492,13 +414,8 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
                         : "Comprar com ETH"}
                     </button>
                     <button
-                      onClick={() => handlePixPayment(nft)}
-                      disabled={purchasing === nft.tokenId}
-                      className={`w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg ${
-                        purchasing === nft.tokenId
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-rasta-yellow hover:bg-rasta-yellow-dark text-black"
-                      }`}
+                      onClick={handlePixPayment}
+                      className="w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg bg-rasta-yellow hover:bg-rasta-yellow-dark text-black"
                     >
                       Comprar com PIX
                     </button>
