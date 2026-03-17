@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useActiveAccount, TransactionButton } from "thirdweb/react";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 import { prepareTransaction, createThirdwebClient } from "thirdweb";
 import { ethereum } from "thirdweb/chains";
 
@@ -21,11 +21,13 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
   const [showPixSoon, setShowPixSoon] = useState(false);
   const ITEMS_PER_PAGE = itemsPerPage;
   const account = useActiveAccount();
+  const { mutate: sendTransaction } = useSendTransaction();
 
   useEffect(() => {
     async function fetchListings() {
@@ -129,99 +131,151 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     setListings((prev) => prev.filter((nft) => nft.tokenId !== tokenId));
   };
 
-  const preparePurchaseTransaction = async (nft: any) => {
-    const response = await fetch("/api/fulfill-listing", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        orderHash: nft.orderHash,
-        walletAddress: account!.address,
-        protocolAddress: nft.protocolAddress,
-      }),
-    });
+  const handlePurchase = async (nft: any) => {
+    if (!account) {
+      alert("Por favor, conecte sua carteira primeiro!");
+      return;
+    }
 
-    const result = await response.json();
+    setPurchasing(nft.tokenId);
 
-    if (result.error) {
-      if (result.error.includes("not found")) {
-        removeInvalidListing(nft.tokenId);
+    try {
+      console.log("🔄 Iniciando compra...");
+      console.log("NFT:", nft.tokenId);
+      console.log("Order Hash:", nft.orderHash);
+
+      const response = await fetch("/api/fulfill-listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderHash: nft.orderHash,
+          walletAddress: account.address,
+          protocolAddress: nft.protocolAddress,
+        }),
+      });
+
+      const result = await response.json();
+      console.log("📦 Resposta da API:", result);
+
+      if (result.error) {
+        if (result.error.includes("not found")) {
+          removeInvalidListing(nft.tokenId);
+          alert("❌ Este NFT já foi vendido. A lista será atualizada.");
+          setPurchasing(null);
+          return;
+        }
+        throw new Error(result.error);
       }
-      throw new Error(result.error);
+
+      if (!result.fulfillment_data?.transaction) {
+        console.error("❌ Estrutura completa:", JSON.stringify(result, null, 2));
+        throw new Error("Dados de transação não encontrados");
+      }
+
+      const txInfo = result.fulfillment_data.transaction;
+      const params = txInfo.input_data?.parameters;
+
+      if (!params) {
+        console.error("❌ Transaction info:", JSON.stringify(txInfo, null, 2));
+        throw new Error("Parâmetros de transação não encontrados");
+      }
+
+      console.log("✅ Parâmetros obtidos");
+      console.log("  - Function:", txInfo.function);
+      console.log("  - To:", txInfo.to);
+      console.log("  - Value:", txInfo.value);
+
+      const { ethers } = await import("ethers");
+
+      const abi = [
+        `function fulfillBasicOrder_efficient_6GL6yc(
+          tuple(
+            address considerationToken,
+            uint256 considerationIdentifier,
+            uint256 considerationAmount,
+            address offerer,
+            address zone,
+            address offerToken,
+            uint256 offerIdentifier,
+            uint256 offerAmount,
+            uint8 basicOrderType,
+            uint256 startTime,
+            uint256 endTime,
+            bytes32 zoneHash,
+            uint256 salt,
+            bytes32 offererConduitKey,
+            bytes32 fulfillerConduitKey,
+            uint256 totalOriginalAdditionalRecipients,
+            tuple(uint256 amount, address recipient)[] additionalRecipients,
+            bytes signature
+          ) parameters
+        ) external payable returns (bool)`,
+      ];
+
+      const iface = new ethers.Interface(abi);
+
+      const basicOrderParams = {
+        considerationToken: params.considerationToken,
+        considerationIdentifier: params.considerationIdentifier,
+        considerationAmount: params.considerationAmount,
+        offerer: params.offerer,
+        zone: params.zone,
+        offerToken: params.offerToken,
+        offerIdentifier: params.offerIdentifier,
+        offerAmount: params.offerAmount,
+        basicOrderType: params.basicOrderType,
+        startTime: params.startTime,
+        endTime: params.endTime,
+        zoneHash: params.zoneHash,
+        salt: params.salt,
+        offererConduitKey: params.offererConduitKey,
+        fulfillerConduitKey: params.fulfillerConduitKey,
+        totalOriginalAdditionalRecipients: params.totalOriginalAdditionalRecipients,
+        additionalRecipients: params.additionalRecipients || [],
+        signature: params.signature,
+      };
+
+      const txData = iface.encodeFunctionData(
+        "fulfillBasicOrder_efficient_6GL6yc",
+        [basicOrderParams]
+      );
+
+      console.log("✅ Calldata encodado com sucesso!");
+      console.log("  - Data length:", txData.length);
+      console.log("  - Data preview:", txData.substring(0, 66) + "...");
+
+      const transaction = prepareTransaction({
+        to: txInfo.to,
+        chain: ethereum,
+        client: client,
+        data: txData as `0x${string}`,
+        value: BigInt(txInfo.value),
+      });
+
+      console.log("📤 Enviando transação via Thirdweb...");
+
+      sendTransaction(transaction, {
+        onSuccess: (result) => {
+          console.log("✅ Compra bem-sucedida:", result.transactionHash);
+          alert(
+            `✅ Compra realizada com sucesso!\n\n` +
+              `Transação: ${result.transactionHash}\n\n` +
+              `O NFT aparecerá na sua carteira em alguns minutos.`
+          );
+          removeInvalidListing(nft.tokenId);
+          setPurchasing(null);
+        },
+        onError: (error) => {
+          console.error("❌ Transação falhou:", error);
+          alert(`❌ Transação falhou:\n\n${error.message}`);
+          setPurchasing(null);
+        },
+      });
+    } catch (error: any) {
+      console.error("💥 Erro na compra:", error);
+      alert(`❌ Erro ao processar compra:\n\n${error.message}`);
+      setPurchasing(null);
     }
-
-    if (!result.fulfillment_data?.transaction) {
-      throw new Error("Dados de transação não encontrados");
-    }
-
-    const txInfo = result.fulfillment_data.transaction;
-    const params = txInfo.input_data?.parameters;
-
-    if (!params) {
-      throw new Error("Parâmetros de transação não encontrados");
-    }
-
-    const { ethers } = await import("ethers");
-
-    const abi = [
-      `function fulfillBasicOrder_efficient_6GL6yc(
-        tuple(
-          address considerationToken,
-          uint256 considerationIdentifier,
-          uint256 considerationAmount,
-          address offerer,
-          address zone,
-          address offerToken,
-          uint256 offerIdentifier,
-          uint256 offerAmount,
-          uint8 basicOrderType,
-          uint256 startTime,
-          uint256 endTime,
-          bytes32 zoneHash,
-          uint256 salt,
-          bytes32 offererConduitKey,
-          bytes32 fulfillerConduitKey,
-          uint256 totalOriginalAdditionalRecipients,
-          tuple(uint256 amount, address recipient)[] additionalRecipients,
-          bytes signature
-        ) parameters
-      ) external payable returns (bool)`,
-    ];
-
-    const iface = new ethers.Interface(abi);
-
-    const basicOrderParams = {
-      considerationToken: params.considerationToken,
-      considerationIdentifier: params.considerationIdentifier,
-      considerationAmount: params.considerationAmount,
-      offerer: params.offerer,
-      zone: params.zone,
-      offerToken: params.offerToken,
-      offerIdentifier: params.offerIdentifier,
-      offerAmount: params.offerAmount,
-      basicOrderType: params.basicOrderType,
-      startTime: params.startTime,
-      endTime: params.endTime,
-      zoneHash: params.zoneHash,
-      salt: params.salt,
-      offererConduitKey: params.offererConduitKey,
-      fulfillerConduitKey: params.fulfillerConduitKey,
-      totalOriginalAdditionalRecipients: params.totalOriginalAdditionalRecipients,
-      additionalRecipients: params.additionalRecipients || [],
-      signature: params.signature,
-    };
-
-    const txData = iface.encodeFunctionData(
-      "fulfillBasicOrder_efficient_6GL6yc",
-      [basicOrderParams]
-    );
-
-    return prepareTransaction({
-      to: txInfo.to,
-      chain: ethereum,
-      client: client,
-      data: txData as `0x${string}`,
-      value: BigInt(txInfo.value),
-    });
   };
 
   const handlePixPayment = () => {
@@ -346,28 +400,19 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
                 </p>
                 {account ? (
                   <div className="space-y-2">
-                    <TransactionButton
-                      transaction={() => preparePurchaseTransaction(nft)}
-                      payModal={{
-                        metadata: {
-                          name: "Order",
-                        },
-                      }}
-                      onTransactionConfirmed={(receipt) => {
-                        alert(
-                          `✅ Compra realizada com sucesso!\n\n` +
-                            `Transação: ${receipt.transactionHash}\n\n` +
-                            `O NFT aparecerá na sua carteira em alguns minutos.`
-                        );
-                        removeInvalidListing(nft.tokenId);
-                      }}
-                      onError={(error) => {
-                        alert(`❌ Transação falhou:\n\n${error.message}`);
-                      }}
-                      className="w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg bg-blue-500 hover:bg-blue-600 text-white"
+                    <button
+                      onClick={() => handlePurchase(nft)}
+                      disabled={purchasing === nft.tokenId}
+                      className={`w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg ${
+                        purchasing === nft.tokenId
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-blue-500 hover:bg-blue-600 text-white"
+                      }`}
                     >
-                      Comprar com ETH
-                    </TransactionButton>
+                      {purchasing === nft.tokenId
+                        ? "Processando..."
+                        : "Comprar com ETH"}
+                    </button>
                     <button
                       onClick={handlePixPayment}
                       className="w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg bg-rasta-yellow hover:bg-rasta-yellow-dark text-black"
