@@ -128,19 +128,19 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
       {paginatedNfts.map((nft) => (
         <div
           key={nft.tokenId}
-          className="bg-white/50 backdrop-blur-sm rounded-none shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+          className="rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
         >
-          <div className="w-full h-56 flex items-center justify-center">
-            {nft.image ? (
-              <img
-                src={nft.image}
-                alt={nft.title}
-                className="max-w-full max-h-full object-contain"
-              />
-            ) : (
+          {nft.image ? (
+            <img
+              src={nft.image}
+              alt={nft.title}
+              className="w-full h-auto block"
+            />
+          ) : (
+            <div className="w-full h-56 flex items-center justify-center bg-gray-200 rounded-lg">
               <span className="text-gray-400 text-sm">Sem imagem</span>
-            )}
-          </div>
+            </div>
+          )}
           <div className="p-2 text-center">
             <p className="text-sm text-gray-700 font-medium">#{nft.tokenId}</p>
           </div>
