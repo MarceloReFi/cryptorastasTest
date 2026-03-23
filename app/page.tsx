@@ -72,14 +72,7 @@ export default function Home() {
             />
           </div>
 
-          {account && (
-            <div className="mt-4 bg-gray-100 p-4 rounded-lg">
-              <p className="text-xs text-gray-600 mb-1">Sua Carteira:</p>
-              <p className="text-sm font-mono text-gray-800 truncate">
-                {account.address}
-              </p>
-            </div>
-          )}
+
         </div>
 
         {/* Conteúdo unificado */}
@@ -87,7 +80,7 @@ export default function Home() {
           <div className="space-y-6">
             {/* Minhas CryptoRastas */}
             <div className="bg-white p-6 rounded-lg shadow-2xl">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900"> Meus CryptoRastas</h2>
+              <h2 className="text-2xl font-bold mb-4 text-gray-900"> Meus Cryptorastas</h2>
               <NFTGallery
                 walletAddress={account.address}
                 itemsPerPage={isMobile ? 10 : 20}
