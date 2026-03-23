@@ -33,7 +33,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <img
-                src="/Cryptorastas-logo-wide.png"
+                src="/cryptorastas01-sticker.jpg"
                 alt="CryptoRastas Logo"
                 className="h-12 w-auto"
               />
