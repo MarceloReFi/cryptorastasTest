@@ -25,6 +25,8 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
   const [showPixSoon, setShowPixSoon] = useState(false);
+  const [ethToBrl, setEthToBrl] = useState<number>(18000); // Fallback inicial
+  const [priceError, setPriceError] = useState<string | null>(null);
   const ITEMS_PER_PAGE = itemsPerPage;
   const account = useActiveAccount();
   const { mutate: sendTransaction } = useSendTransaction();
@@ -121,6 +123,28 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
 
     fetchListings();
   }, [lastRefresh]);
+
+  useEffect(() => {
+    async function fetchEthPrice() {
+      try {
+        const response = await fetch('/api/eth-price');
+        const data = await response.json();
+
+        if (data.brl) {
+          setEthToBrl(data.brl);
+          setPriceError(data.error || null);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar preço ETH/BRL:', error);
+        setPriceError('Erro ao carregar preço');
+      }
+    }
+
+    fetchEthPrice();
+    // Atualizar a cada 5 minutos
+    const interval = setInterval(fetchEthPrice, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const refreshListings = () => {
     setLastRefresh(Date.now());
@@ -278,6 +302,15 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     }
   };
 
+  const formatBrlPrice = (ethPrice: string, decimals: number) => {
+    const ethAmount = parseInt(ethPrice) / Math.pow(10, decimals);
+    const brlAmount = ethAmount * ethToBrl;
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(brlAmount);
+  };
+
   const handlePixPayment = () => {
     setShowPixSoon(true);
   };
@@ -382,8 +415,7 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
               <div className="p-3 sm:p-4 text-center">
                 <p className="font-bold text-sm text-gray-700">#{nft.tokenId}</p>
                 <p className="text-lg font-bold text-green-600 mt-2">
-                  {(parseInt(nft.price) / Math.pow(10, nft.decimals)).toFixed(4)}{" "}
-                  ETH
+                  {formatBrlPrice(nft.price, nft.decimals)}
                 </p>
                 {account ? (
                   <div className="space-y-2">
