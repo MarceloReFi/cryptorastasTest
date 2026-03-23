@@ -95,11 +95,7 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="bg-white p-6 rounded-lg shadow-2xl text-center">
-            <p className="text-gray-600">
-              Entre com seu email ou conta Google.
-            </p>
-          </div>
+          
         )}
       </div>
     </div>
