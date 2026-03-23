@@ -77,7 +77,7 @@ export default function Home() {
         {account && (
           <div className="space-y-6">
             {/* Minhas CryptoRastas */}
-            <div className="bg-white p-6 rounded-lg shadow-2xl">
+            <div className="bg-white/60 backdrop-blur-sm p-6 rounded-lg shadow-2xl">
               <h2 className="text-2xl font-bold mb-4 text-gray-900">
                 Meus Cryptorastas
               </h2>
