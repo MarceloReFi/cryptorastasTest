@@ -35,7 +35,7 @@ export default function Home() {
               <img
                 src="/cryptorastas01-sticker.jpg"
                 alt="CryptoRastas Logo"
-                className="h-12 w-auto"
+                className="h-16 w-auto rounded-lg"
               />
               <div>
                 <h1 className="text-3xl font-bold text-gray-800">
