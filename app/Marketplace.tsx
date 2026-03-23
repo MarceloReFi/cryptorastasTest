@@ -274,6 +274,9 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         client: client,
         data: txData as `0x${string}`,
         value: BigInt(txInfo.value),
+        __metadata: {
+          name: "Prosseguir com a Compra"
+        }
       });
 
       console.log("📤 Enviando transação via Thirdweb...");
