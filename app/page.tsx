@@ -42,7 +42,7 @@ export default function Home() {
                   RastaWallet
                 </h1>
                 <p className="text-gray-600">
-                  One love, inna decentralized style!
+                  One love inna decentralized style!
                 </p>
               </div>
             </div>
