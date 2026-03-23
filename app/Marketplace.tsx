@@ -373,7 +373,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
           onClick={refreshListings}
           className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-yellow text-black rounded-lg font-bold hover:bg-rasta-yellow-dark transition-all shadow-md"
         >
-          🔄 Atualizar
+          Atualizar
         </button>
       </div>
 
