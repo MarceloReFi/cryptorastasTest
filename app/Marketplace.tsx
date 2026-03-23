@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useActiveAccount, TransactionButton } from "thirdweb/react";
 import { prepareTransaction, createThirdwebClient } from "thirdweb";
 import { ethereum } from "thirdweb/chains";
+import { NFTCard } from "./components/NFTCard";
+import { PixBuyButton, ethButtonStyle, ethButtonProcessingStyle, ConnectPromptButton } from "./components/PurchaseButtons";
 
 declare global {
   interface Window {
@@ -36,7 +38,6 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       setLoading(true);
       setError(null);
 
-      // Verificar se página já está no cache
       if (pagesCache.has(pageNumber)) {
         console.log(`📦 Usando cache da página ${pageNumber + 1}`);
         setListings(pagesCache.get(pageNumber)!);
@@ -45,9 +46,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       }
 
       let url = `https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=${ITEMS_PER_PAGE}`;
-      if (cursor) {
-        url += `&next=${cursor}`;
-      }
+      if (cursor) url += `&next=${cursor}`;
 
       console.log("🔍 Buscando listings:", cursor ? `página ${pageNumber + 1}` : "primeira página");
 
@@ -65,7 +64,6 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       }
 
       const data = await response.json();
-      console.log("📊 Listings response:", data);
 
       if (!data.listings || data.listings.length === 0) {
         console.warn("⚠️ Nenhum Cryptorasta disponível");
@@ -73,7 +71,6 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
         return;
       }
 
-      // Salvar próximo cursor se existir
       if (data.next && cursors.length === pageNumber + 1) {
         setCursors(prev => [...prev, data.next]);
       }
@@ -84,10 +81,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
             const tokenId = listing.protocol_data?.parameters?.offer?.[0]?.identifierOrCriteria;
             const contractAddress = listing.protocol_data?.parameters?.offer?.[0]?.token || "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
 
-            if (!tokenId) {
-              console.warn("⚠️ Listing sem token_id:", listing.order_hash);
-              return null;
-            }
+            if (!tokenId) return null;
 
             const nftResponse = await fetch(
               `https://eth-mainnet.g.alchemy.com/nft/v3/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}`,
@@ -114,20 +108,14 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       );
 
       const validListings = nftsWithDetails.filter((nft) => nft !== null);
-      
-      // Remove duplicados dentro da mesma página
       const seenInPage = new Set<string>();
       const uniqueListings = validListings.filter(nft => {
-        if (seenInPage.has(nft.tokenId)) {
-          return false;
-        }
+        if (seenInPage.has(nft.tokenId)) return false;
         seenInPage.add(nft.tokenId);
         return true;
       });
 
-      console.log(`✅ ${uniqueListings.length} NFTs únicos carregados (de ${validListings.length} válidos)`);
-      
-      // Adicionar ao cache
+      console.log(`✅ ${uniqueListings.length} NFTs únicos carregados`);
       setPagesCache(prev => new Map(prev).set(pageNumber, uniqueListings));
       setListings(uniqueListings);
     } catch (error) {
@@ -147,7 +135,6 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       try {
         const response = await fetch('/api/eth-price');
         const data = await response.json();
-
         if (data.brl) {
           setEthToBrl(data.brl);
           setPriceError(data.error || null);
@@ -157,9 +144,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
         setPriceError('Erro ao carregar preço');
       }
     }
-
     fetchEthPrice();
-    // Atualizar a cada 5 minutos
     const interval = setInterval(fetchEthPrice, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
@@ -178,10 +163,6 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
 
   const preparePurchaseTransaction = async (nft: any) => {
     try {
-      console.log("🔄 Preparando compra...");
-      console.log("NFT:", nft.tokenId);
-      console.log("Order Hash:", nft.orderHash);
-
       const response = await fetch("/api/fulfill-listing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -209,13 +190,9 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
 
       const txInfo = result.fulfillment_data.transaction;
       const params = txInfo.input_data?.parameters;
-
-      if (!params) {
-        throw new Error("Parâmetros de transação não encontrados");
-      }
+      if (!params) throw new Error("Parâmetros de transação não encontrados");
 
       const { ethers } = await import("ethers");
-
       const abi = [
         `function fulfillBasicOrder_efficient_6GL6yc(
           tuple(
@@ -242,7 +219,6 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       ];
 
       const iface = new ethers.Interface(abi);
-
       const basicOrderParams = {
         considerationToken: params.considerationToken,
         considerationIdentifier: params.considerationIdentifier,
@@ -264,10 +240,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
         signature: params.signature,
       };
 
-      const txData = iface.encodeFunctionData(
-        "fulfillBasicOrder_efficient_6GL6yc",
-        [basicOrderParams]
-      );
+      const txData = iface.encodeFunctionData("fulfillBasicOrder_efficient_6GL6yc", [basicOrderParams]);
 
       return prepareTransaction({
         to: txInfo.to,
@@ -286,51 +259,40 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
   const formatBrlPrice = (ethPrice: string, decimals: number) => {
     const ethAmount = parseInt(ethPrice) / Math.pow(10, decimals);
     const brlAmount = ethAmount * ethToBrl;
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(brlAmount);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(brlAmount);
   };
 
-  const handlePixPayment = () => {
-    setShowPixSoon(true);
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const goToNextPage = () => {
-    if (cursors[currentPage + 1] !== undefined) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
+  /* ── Loading ── */
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Carregando Cryptorastas...</p>
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <div
+          className="w-12 h-12 rounded-full border-2 border-transparent animate-spin"
+          style={{ borderTopColor: "var(--cr-green)", borderRightColor: "var(--cr-yellow)" }}
+        />
+        <p style={{ color: "var(--cr-text-secondary)" }}>Carregando Cryptorastas...</p>
       </div>
     );
   }
 
+  /* ── Empty / Error ── */
   if (listings.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            {error ?? "Nenhum Cryptorasta disponível no momento"}
-          </p>
-          <button
-            onClick={() => { setError(null); refreshListings(); }}
-            className="px-6 py-3 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark transition-all shadow-md"
-          >
-            Atualizar Listagens
-          </button>
-        </div>
+      <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+        <p style={{ color: "var(--cr-text-secondary)" }}>
+          {error ?? "Nenhum Cryptorasta disponível no momento"}
+        </p>
+        <button
+          onClick={() => { setError(null); refreshListings(); }}
+          className="px-6 py-2.5 rounded-[12px] font-bold text-white transition-all duration-300
+                     hover:scale-[1.02] hover:shadow-lg"
+          style={{
+            background: "var(--cr-green)",
+            boxShadow: "0 4px 14px var(--cr-green-glow)",
+          }}
+        >
+          Atualizar Listagens
+        </button>
       </div>
     );
   }
@@ -339,18 +301,31 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
     <>
       {/* Modal PIX - Em Breve */}
       {showPixSoon && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
+          <div
+            className="rounded-[var(--cr-radius-lg)] p-8 max-w-sm w-full text-center"
+            style={{
+              background: "var(--cr-bg-subtle)",
+              border: "1px solid var(--cr-border)",
+              boxShadow: "var(--cr-shadow-lg)",
+            }}
+          >
             <div className="text-5xl mb-4">⏳</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
+            <h3 className="text-xl font-bold mb-2" style={{ color: "var(--cr-text-primary)" }}>
               Em Breve!
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="mb-6" style={{ color: "var(--cr-text-secondary)" }}>
               O pagamento via PIX estará disponível em breve. Fique ligado!
             </p>
             <button
               onClick={() => setShowPixSoon(false)}
-              className="w-full py-3 px-4 rounded-lg font-bold bg-rasta-yellow text-black hover:bg-rasta-yellow-dark transition-all shadow-md"
+              className="w-full py-3 px-4 rounded-[12px] font-bold transition-all duration-300 hover:scale-[1.02]"
+              style={{
+                background: "var(--cr-yellow)",
+                color: "#000",
+                boxShadow: "0 4px 14px var(--cr-yellow-glow)",
+              }}
             >
               Fechar
             </button>
@@ -359,119 +334,84 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       )}
 
       {/* Pagination */}
-      <div className="flex justify-center items-center gap-4 mb-4">
+      <div className="flex justify-center items-center gap-4 mb-6">
         <button
-          onClick={goToPreviousPage}
+          onClick={() => currentPage > 0 && setCurrentPage(currentPage - 1)}
           disabled={currentPage === 0}
-          className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="px-5 py-2 rounded-[12px] font-bold text-white text-sm transition-all duration-300
+                     hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+          style={{
+            background: "var(--cr-green)",
+            boxShadow: currentPage === 0 ? "none" : "0 4px 14px var(--cr-green-glow)",
+          }}
         >
           Anterior
         </button>
-        <span className="py-2 text-gray-800 font-semibold text-sm sm:text-base">
+        <span className="text-sm font-semibold px-2" style={{ color: "var(--cr-text-secondary)" }}>
           Página {currentPage + 1}
         </span>
         <button
-          onClick={goToNextPage}
+          onClick={() => cursors[currentPage + 1] !== undefined && setCurrentPage(currentPage + 1)}
           disabled={cursors[currentPage + 1] === undefined}
-          className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="px-5 py-2 rounded-[12px] font-bold text-white text-sm transition-all duration-300
+                     hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+          style={{
+            background: "var(--cr-green)",
+            boxShadow: cursors[currentPage + 1] === undefined ? "none" : "0 4px 14px var(--cr-green-glow)",
+          }}
         >
           Próxima
         </button>
-    
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {listings.map((nft) => (
-            <div
-              key={nft.tokenId}
-              className="bg-gray-50 rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-            >
-              <div className="w-full aspect-square bg-gray-100 flex items-center justify-center">
-                {nft.image ? (
-                  <img
-                    src={nft.image}
-                    alt={nft.name}
-                    className="max-w-full max-h-full object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <span className="text-gray-400 text-sm">Sem imagem</span>
-                )}
-              </div>
-              <div className="p-3 sm:p-4 text-center">
-                <p className="font-bold text-sm text-gray-700">#{nft.tokenId}</p>
-                <p className="text-lg font-bold text-green-600 mt-2">
-                  {formatBrlPrice(nft.price, nft.decimals)}
-                </p>
-                {account ? (
-                  <div className="space-y-2">
-                    <button
-                      onClick={handlePixPayment}
-                      className="w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg bg-rasta-yellow hover:bg-rasta-yellow-dark text-black"
-                    >
-                      Comprar com PIX
-                    </button>
-                    <div className="w-full">
-                      <TransactionButton
-                        transaction={async () => {
-                          const tx = await preparePurchaseTransaction(nft);
-                          if (!tx) throw new Error("Falha ao preparar transação");
-                          return tx;
-                        }}
-                        onTransactionSent={() => {
-                          setPurchasing(nft.tokenId);
-                        }}
-                        onTransactionConfirmed={(receipt) => {
-                          console.log("Compra bem-sucedida:", receipt.transactionHash);
-                          alert(
-                            `Compra realizada com sucesso!\n\n` +
-                              `Transação: ${receipt.transactionHash}\n\n` +
-                              `O NFT aparecerá na sua carteira em alguns minutos.`
-                          );
-                          removeInvalidListing(nft.tokenId);
-                          setPurchasing(null);
-                        }}
-                        onError={(error) => {
-                          console.error("❌ Transação falhou:", error);
-                          alert(`❌ Transação falhou:\n\n${error.message}`);
-                          setPurchasing(null);
-                        }}
-                        payModal={{
-                          metadata: {
-                            name: `Comprar Cryptorasta #${nft.tokenId}`,
-                            image: nft.image || "/Cryptorastas-logo-wide.png"
-                          }
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '0.5rem',
-                          borderRadius: '0.5rem',
-                          fontWeight: 'bold',
-                          transition: 'all 0.3s',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                          backgroundColor: purchasing === nft.tokenId ? '#9ca3af' : '#fbbf24',
-                          color: purchasing === nft.tokenId ? '#4b5563' : '#000000',
-                          cursor: purchasing === nft.tokenId ? 'not-allowed' : 'pointer',
-                        }}
-                        disabled={purchasing === nft.tokenId}
-                      >
-                        {purchasing === nft.tokenId ? "Processando..." : "Comprar com Crédito/ETH"}
-                      </TransactionButton>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    disabled
-                    className="w-full mt-3 py-2 rounded-lg font-semibold bg-gray-300 text-gray-600 cursor-not-allowed"
-                  >
-                    Conecte para Comprar
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+          <NFTCard key={nft.tokenId} tokenId={nft.tokenId} name={nft.name} image={nft.image}>
+            {/* Price */}
+            <p className="text-center font-bold text-base" style={{ color: "var(--cr-yellow)" }}>
+              {formatBrlPrice(nft.price, nft.decimals)}
+            </p>
+
+            {/* Buttons */}
+            {account ? (
+              <>
+                <PixBuyButton onClick={() => setShowPixSoon(true)} />
+                <TransactionButton
+                  transaction={async () => {
+                    const tx = await preparePurchaseTransaction(nft);
+                    if (!tx) throw new Error("Falha ao preparar transação");
+                    return tx;
+                  }}
+                  onTransactionSent={() => setPurchasing(nft.tokenId)}
+                  onTransactionConfirmed={(receipt) => {
+                    alert(
+                      `Compra realizada com sucesso!\n\nTransação: ${receipt.transactionHash}\n\nO NFT aparecerá na sua carteira em alguns minutos.`
+                    );
+                    removeInvalidListing(nft.tokenId);
+                    setPurchasing(null);
+                  }}
+                  onError={(error) => {
+                    alert(`❌ Transação falhou:\n\n${error.message}`);
+                    setPurchasing(null);
+                  }}
+                  payModal={{
+                    metadata: {
+                      name: `Comprar Cryptorasta #${nft.tokenId}`,
+                      image: nft.image || "/Cryptorastas-logo-wide.png",
+                    },
+                  }}
+                  style={purchasing === nft.tokenId ? ethButtonProcessingStyle : ethButtonStyle}
+                  disabled={purchasing === nft.tokenId}
+                >
+                  {purchasing === nft.tokenId ? "Processando..." : "Comprar com ETH"}
+                </TransactionButton>
+              </>
+            ) : (
+              <ConnectPromptButton />
+            )}
+          </NFTCard>
+        ))}
       </div>
     </>
   );
