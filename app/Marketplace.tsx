@@ -24,24 +24,32 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [cursors, setCursors] = useState<(string | null)[]>([null]);
+  const [pagesCache, setPagesCache] = useState<Map<number, any[]>>(new Map());
   const [showPixSoon, setShowPixSoon] = useState(false);
   const [ethToBrl, setEthToBrl] = useState<number>(18000);
   const [priceError, setPriceError] = useState<string | null>(null);
-  const [seenTokenIds, setSeenTokenIds] = useState<Set<string>>(new Set());
   const ITEMS_PER_PAGE = itemsPerPage;
   const account = useActiveAccount();
 
-  const fetchListings = async (cursor: string | null = null) => {
+  const fetchListings = async (pageNumber: number, cursor: string | null = null) => {
     try {
       setLoading(true);
       setError(null);
+
+      // Verificar se página já está no cache
+      if (pagesCache.has(pageNumber)) {
+        console.log(`📦 Usando cache da página ${pageNumber + 1}`);
+        setListings(pagesCache.get(pageNumber)!);
+        setLoading(false);
+        return;
+      }
 
       let url = `https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=${ITEMS_PER_PAGE}`;
       if (cursor) {
         url += `&next=${cursor}`;
       }
 
-      console.log("🔍 Buscando listings:", cursor ? "próxima página" : "primeira página");
+      console.log("🔍 Buscando listings:", cursor ? `página ${pageNumber + 1}` : "primeira página");
 
       const response = await fetch(url, {
         headers: {
@@ -66,7 +74,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       }
 
       // Salvar próximo cursor se existir
-      if (data.next && cursors.length === currentPage + 1) {
+      if (data.next && cursors.length === pageNumber + 1) {
         setCursors(prev => [...prev, data.next]);
       }
 
@@ -107,20 +115,20 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
 
       const validListings = nftsWithDetails.filter((nft) => nft !== null);
       
-      // Remove duplicados usando Set local (não depende de estado assíncrono)
-      const localSeenIds = new Set(seenTokenIds);
+      // Remove duplicados dentro da mesma página
+      const seenInPage = new Set<string>();
       const uniqueListings = validListings.filter(nft => {
-        if (localSeenIds.has(nft.tokenId)) {
+        if (seenInPage.has(nft.tokenId)) {
           return false;
         }
-        localSeenIds.add(nft.tokenId);
+        seenInPage.add(nft.tokenId);
         return true;
       });
 
-      // Atualiza estado uma vez no final
-      setSeenTokenIds(localSeenIds);
-
       console.log(`✅ ${uniqueListings.length} NFTs únicos carregados (de ${validListings.length} válidos)`);
+      
+      // Adicionar ao cache
+      setPagesCache(prev => new Map(prev).set(pageNumber, uniqueListings));
       setListings(uniqueListings);
     } catch (error) {
       console.error("Error fetching listings:", error);
@@ -131,7 +139,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
   };
 
   useEffect(() => {
-    fetchListings(cursors[currentPage]);
+    fetchListings(currentPage, cursors[currentPage]);
   }, [currentPage]);
 
   useEffect(() => {
@@ -157,11 +165,11 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
   }, []);
 
   const refreshListings = () => {
-    setSeenTokenIds(new Set());
+    setPagesCache(new Map());
     setCursors([null]);
     setCurrentPage(0);
     setListings([]);
-    fetchListings(null);
+    fetchListings(0, null);
   };
 
   const removeInvalidListing = (tokenId: string) => {
@@ -320,7 +328,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
             onClick={() => { setError(null); refreshListings(); }}
             className="px-6 py-3 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark transition-all shadow-md"
           >
-            Atualizar Listagens
+            🔄 Atualizar Listagens
           </button>
         </div>
       </div>
@@ -368,6 +376,12 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
           className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           Próxima
+        </button>
+        <button
+          onClick={refreshListings}
+          className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-yellow text-black rounded-lg font-bold hover:bg-rasta-yellow-dark transition-all shadow-md"
+        >
+          🔄 Atualizar
         </button>
       </div>
 
