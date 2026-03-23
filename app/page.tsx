@@ -64,7 +64,7 @@ export default function Home() {
                 },
               }}
               connectButton={{
-                label: "Crie sua conta",
+                label: "Crie sua conta ou Conecte-se",
               }}
             />
           </div>
