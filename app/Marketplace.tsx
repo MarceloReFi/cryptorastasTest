@@ -107,14 +107,18 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
 
       const validListings = nftsWithDetails.filter((nft) => nft !== null);
       
-      // Remove duplicados baseado no tokenId
-      const uniqueListings = validListings.reduce((acc, nft) => {
-        if (!seenTokenIds.has(nft.tokenId)) {
-          acc.push(nft);
-          setSeenTokenIds(prev => new Set(prev).add(nft.tokenId));
+      // Remove duplicados usando Set local (não depende de estado assíncrono)
+      const localSeenIds = new Set(seenTokenIds);
+      const uniqueListings = validListings.filter(nft => {
+        if (localSeenIds.has(nft.tokenId)) {
+          return false;
         }
-        return acc;
-      }, [] as any[]);
+        localSeenIds.add(nft.tokenId);
+        return true;
+      });
+
+      // Atualiza estado uma vez no final
+      setSeenTokenIds(localSeenIds);
 
       console.log(`✅ ${uniqueListings.length} NFTs únicos carregados (de ${validListings.length} válidos)`);
       setListings(uniqueListings);
