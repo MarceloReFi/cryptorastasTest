@@ -130,7 +130,7 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
           key={nft.tokenId}
           className="bg-white/50 backdrop-blur-sm rounded-none shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
         >
-          <div className="w-full h-56 bg-gray-100 flex items-center justify-center">
+          <div className="w-full h-56 flex items-center justify-center">
             {nft.image ? (
               <img
                 src={nft.image}
