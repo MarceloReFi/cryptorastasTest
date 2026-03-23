@@ -363,9 +363,9 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
           .map((nft) => (
             <div
               key={nft.tokenId}
-              className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+              className="bg-gray-50 rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
             >
-              <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+              <div className="w-full aspect-square bg-gray-100 flex items-center justify-center">
                 {nft.image ? (
                   <img
                     src={nft.image}
@@ -379,8 +379,8 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
                   <span className="text-gray-400 text-sm">Sem imagem</span>
                 )}
               </div>
-              <div className="p-3 sm:p-4">
-                <p className="font-bold text-sm truncate">{nft.name}</p>
+              <div className="p-3 sm:p-4 text-center">
+                <p className="font-bold text-sm text-gray-700">#{nft.tokenId}</p>
                 <p className="text-lg font-bold text-green-600 mt-2">
                   {(parseInt(nft.price) / Math.pow(10, nft.decimals)).toFixed(4)}{" "}
                   ETH
