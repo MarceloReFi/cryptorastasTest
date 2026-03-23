@@ -410,45 +410,53 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
                     >
                       Comprar com PIX
                     </button>
-                    <TransactionButton
-                      transaction={async () => {
-                        const tx = await preparePurchaseTransaction(nft);
-                        if (!tx) throw new Error("Falha ao preparar transação");
-                        return tx;
-                      }}
-                      onTransactionSent={() => {
-                        setPurchasing(nft.tokenId);
-                      }}
-                      onTransactionConfirmed={(receipt) => {
-                        console.log("✅ Compra bem-sucedida:", receipt.transactionHash);
-                        alert(
-                          `✅ Compra realizada com sucesso!\n\n` +
-                            `Transação: ${receipt.transactionHash}\n\n` +
-                            `O NFT aparecerá na sua carteira em alguns minutos.`
-                        );
-                        removeInvalidListing(nft.tokenId);
-                        setPurchasing(null);
-                      }}
-                      onError={(error) => {
-                        console.error("❌ Transação falhou:", error);
-                        alert(`❌ Transação falhou:\n\n${error.message}`);
-                        setPurchasing(null);
-                      }}
-                      payModal={{
-                        metadata: {
-                          name: `Comprar Cryptorasta #${nft.tokenId}`,
-                          image: nft.image || "/Cryptorastas-logo-wide.png"
-                        }
-                      }}
-                      className={`w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg ${
-                        purchasing === nft.tokenId
-                          ? "bg-gray-400 cursor-not-allowed text-gray-600"
-                          : "bg-rasta-yellow hover:bg-rasta-yellow-dark text-black"
-                      }`}
-                      disabled={purchasing === nft.tokenId}
-                    >
-                      {purchasing === nft.tokenId ? "Processando..." : "Comprar com ETH"}
-                    </TransactionButton>
+                    <div className="w-full">
+                      <TransactionButton
+                        transaction={async () => {
+                          const tx = await preparePurchaseTransaction(nft);
+                          if (!tx) throw new Error("Falha ao preparar transação");
+                          return tx;
+                        }}
+                        onTransactionSent={() => {
+                          setPurchasing(nft.tokenId);
+                        }}
+                        onTransactionConfirmed={(receipt) => {
+                          console.log("✅ Compra bem-sucedida:", receipt.transactionHash);
+                          alert(
+                            `✅ Compra realizada com sucesso!\n\n` +
+                              `Transação: ${receipt.transactionHash}\n\n` +
+                              `O NFT aparecerá na sua carteira em alguns minutos.`
+                          );
+                          removeInvalidListing(nft.tokenId);
+                          setPurchasing(null);
+                        }}
+                        onError={(error) => {
+                          console.error("❌ Transação falhou:", error);
+                          alert(`❌ Transação falhou:\n\n${error.message}`);
+                          setPurchasing(null);
+                        }}
+                        payModal={{
+                          metadata: {
+                            name: `Comprar Cryptorasta #${nft.tokenId}`,
+                            image: nft.image || "/Cryptorastas-logo-wide.png"
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          borderRadius: '0.5rem',
+                          fontWeight: 'bold',
+                          transition: 'all 0.3s',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                          backgroundColor: purchasing === nft.tokenId ? '#9ca3af' : '#fbbf24',
+                          color: purchasing === nft.tokenId ? '#4b5563' : '#000000',
+                          cursor: purchasing === nft.tokenId ? 'not-allowed' : 'pointer',
+                        }}
+                        disabled={purchasing === nft.tokenId}
+                      >
+                        {purchasing === nft.tokenId ? "Processando..." : "Comprar com ETH"}
+                      </TransactionButton>
+                    </div>
                   </div>
                 ) : (
                   <button
