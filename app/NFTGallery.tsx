@@ -91,10 +91,10 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
     return (
       <div className="rounded-lg p-8 text-center">
         <p className="text-gray-600">
-          Você ainda não tem Cryptorastas nesta carteira.
+          Você ainda não tem Cryptorastas.
         </p>
         <p className="text-sm text-gray-500 mt-2">
-          Adquira a sua no marketplace!
+          Adquira a sua abaixo!
         </p>
       </div>
     );
