@@ -320,7 +320,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
             onClick={() => { setError(null); refreshListings(); }}
             className="px-6 py-3 bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark transition-all shadow-md"
           >
-            🔄 Atualizar Listagens
+            Atualizar Listagens
           </button>
         </div>
       </div>
