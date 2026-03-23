@@ -1,5 +1,4 @@
 "use client";
-
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { createThirdwebClient } from "thirdweb";
 import { inAppWallet } from "thirdweb/wallets";
@@ -13,14 +12,12 @@ const client = createThirdwebClient({
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
-
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
   return isMobile;
 };
 
@@ -71,21 +68,22 @@ export default function Home() {
               }}
             />
           </div>
-
-
         </div>
 
         {/* Conteúdo unificado */}
-        {account ? (
+        {account && (
           <div className="space-y-6">
             {/* Minhas CryptoRastas */}
             <div className="bg-white p-6 rounded-lg shadow-2xl">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900"> Meus Cryptorastas</h2>
+              <h2 className="text-2xl font-bold mb-4 text-gray-900">
+                Meus Cryptorastas
+              </h2>
               <NFTGallery
                 walletAddress={account.address}
                 itemsPerPage={isMobile ? 10 : 20}
               />
             </div>
+
             {/* Marketplace */}
             <div className="bg-transparent p-6 rounded-lg shadow-2xl">
               <h2 className="text-2xl font-bold mb-4 text-gray-900">
@@ -94,8 +92,6 @@ export default function Home() {
               <Marketplace itemsPerPage={isMobile ? 10 : 20} />
             </div>
           </div>
-        ) : (
-          
         )}
       </div>
     </div>
