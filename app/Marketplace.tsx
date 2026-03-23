@@ -388,6 +388,12 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
                 {account ? (
                   <div className="space-y-2">
                     <button
+                      onClick={handlePixPayment}
+                      className="w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg bg-rasta-yellow hover:bg-rasta-yellow-dark text-black"
+                    >
+                      Comprar com PIX
+                    </button>
+                    <button
                       onClick={() => handlePurchase(nft)}
                       disabled={purchasing === nft.tokenId}
                       className={`w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg ${
@@ -399,12 +405,6 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
                       {purchasing === nft.tokenId
                         ? "Processando..."
                         : "Comprar com ETH"}
-                    </button>
-                    <button
-                      onClick={handlePixPayment}
-                      className="w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg bg-rasta-yellow hover:bg-rasta-yellow-dark text-black"
-                    >
-                      Comprar com PIX
                     </button>
                   </div>
                 ) : (
