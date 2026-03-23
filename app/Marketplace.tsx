@@ -17,111 +17,118 @@ const client = createThirdwebClient({
 
 const SEAPORT_1_6_ADDRESS = "0x0000000000000068F116a894984e2DB1123eB395";
 
-export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
+export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [lastRefresh, setLastRefresh] = useState(Date.now());
+  const [cursors, setCursors] = useState<(string | null)[]>([null]);
   const [showPixSoon, setShowPixSoon] = useState(false);
-  const [ethToBrl, setEthToBrl] = useState<number>(18000); // Fallback inicial
+  const [ethToBrl, setEthToBrl] = useState<number>(18000);
   const [priceError, setPriceError] = useState<string | null>(null);
+  const [seenTokenIds, setSeenTokenIds] = useState<Set<string>>(new Set());
   const ITEMS_PER_PAGE = itemsPerPage;
   const account = useActiveAccount();
 
-  useEffect(() => {
-    async function fetchListings() {
-      try {
-        setError(null);
+  const fetchListings = async (cursor: string | null = null) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const url =
-          "https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all" +
-          "?limit=50";
+      let url = `https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=${ITEMS_PER_PAGE}`;
+      if (cursor) {
+        url += `&next=${cursor}`;
+      }
 
-        console.log("🔍 Buscando listings ativos...");
+      console.log("🔍 Buscando listings:", cursor ? "próxima página" : "primeira página");
 
-        const response = await fetch(url, {
-          headers: {
-            "X-API-KEY": process.env.NEXT_PUBLIC_OPENSEA_API_KEY || "",
-            "Content-Type": "application/json",
-          },
-        });
+      const response = await fetch(url, {
+        headers: {
+          "X-API-KEY": process.env.NEXT_PUBLIC_OPENSEA_API_KEY || "",
+          "Content-Type": "application/json",
+        },
+      });
 
-        if (!response.ok) {
-          console.error("❌ Erro na API OpenSea:", response.status, response.statusText);
-          const errorText = await response.text();
-          console.error("Detalhes do erro:", errorText);
-          setListings([]);
-          return;
-        }
+      if (!response.ok) {
+        console.error("❌ Erro na API OpenSea:", response.status, response.statusText);
+        setListings([]);
+        return;
+      }
 
-        const data = await response.json();
-        console.log("📊 Listings response:", data);
+      const data = await response.json();
+      console.log("📊 Listings response:", data);
 
-        if (!data.listings || data.listings.length === 0) {
-          console.warn("⚠️ Nenhum Cryptorasta disponível");
-          setListings([]);
-          return;
-        }
+      if (!data.listings || data.listings.length === 0) {
+        console.warn("⚠️ Nenhum Cryptorasta disponível");
+        setListings([]);
+        return;
+      }
 
-        const allListings = data.listings;
-        console.log(`📦 Total de ${allListings.length} listings ativos recebidos`);
+      // Salvar próximo cursor se existir
+      if (data.next && cursors.length === currentPage + 1) {
+        setCursors(prev => [...prev, data.next]);
+      }
 
-        const nftsWithDetails = await Promise.all(
-          allListings.map(async (listing: any) => {
-            try {
-              const tokenId =
-                listing.protocol_data?.parameters?.offer?.[0]?.identifierOrCriteria;
+      const nftsWithDetails = await Promise.all(
+        data.listings.map(async (listing: any) => {
+          try {
+            const tokenId = listing.protocol_data?.parameters?.offer?.[0]?.identifierOrCriteria;
+            const contractAddress = listing.protocol_data?.parameters?.offer?.[0]?.token || "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
 
-              const contractAddress =
-                listing.protocol_data?.parameters?.offer?.[0]?.token ||
-                "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
-
-              if (!tokenId) {
-                console.warn("⚠️ Listing sem token_id:", listing.order_hash);
-                return null;
-              }
-
-              const nftResponse = await fetch(
-                `https://eth-mainnet.g.alchemy.com/nft/v3/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}`,
-                { headers: { accept: "application/json" } }
-              );
-
-              const nftData = await nftResponse.json();
-
-              return {
-                tokenId,
-                name: nftData.name || `Cryptorasta #${tokenId}`,
-                image: nftData.image?.cachedUrl || nftData.image?.originalUrl || "",
-                price: listing.price?.current?.value || "0",
-                decimals: listing.price?.current?.decimals || 18,
-                orderHash: listing.order_hash,
-                protocolAddress:
-                  listing.protocol_address ||
-                  SEAPORT_1_6_ADDRESS,
-                fullOrder: listing,
-              };
-            } catch (error) {
-              console.error("❌ Erro processando listing:", error);
+            if (!tokenId) {
+              console.warn("⚠️ Listing sem token_id:", listing.order_hash);
               return null;
             }
-          })
-        );
 
-        const validListings = nftsWithDetails.filter((nft) => nft !== null);
-        console.log(`✅ ${validListings.length} NFTs válidos carregados`);
-        setListings(validListings);
-      } catch (error) {
-        console.error("Error fetching listings:", error);
-        setError("Erro ao buscar NFTs. Tente novamente.");
-      } finally {
-        setLoading(false);
-      }
+            const nftResponse = await fetch(
+              `https://eth-mainnet.g.alchemy.com/nft/v3/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}`,
+              { headers: { accept: "application/json" } }
+            );
+
+            const nftData = await nftResponse.json();
+
+            return {
+              tokenId,
+              name: nftData.name || `Cryptorasta #${tokenId}`,
+              image: nftData.image?.cachedUrl || nftData.image?.originalUrl || "",
+              price: listing.price?.current?.value || "0",
+              decimals: listing.price?.current?.decimals || 18,
+              orderHash: listing.order_hash,
+              protocolAddress: listing.protocol_address || SEAPORT_1_6_ADDRESS,
+              fullOrder: listing,
+            };
+          } catch (error) {
+            console.error("❌ Erro processando listing:", error);
+            return null;
+          }
+        })
+      );
+
+      const validListings = nftsWithDetails.filter((nft) => nft !== null);
+      
+      // Remove duplicados baseado no tokenId
+      const uniqueListings = validListings.reduce((acc, nft) => {
+        if (!seenTokenIds.has(nft.tokenId)) {
+          acc.push(nft);
+          setSeenTokenIds(prev => new Set(prev).add(nft.tokenId));
+        }
+        return acc;
+      }, [] as any[]);
+
+      console.log(`✅ ${uniqueListings.length} NFTs únicos carregados (de ${validListings.length} válidos)`);
+      setListings(uniqueListings);
+    } catch (error) {
+      console.error("Error fetching listings:", error);
+      setError("Erro ao buscar NFTs. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    fetchListings();
-  }, [lastRefresh]);
+  useEffect(() => {
+    fetchListings(cursors[currentPage]);
+  }, [currentPage]);
 
   useEffect(() => {
     async function fetchEthPrice() {
@@ -146,8 +153,11 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   }, []);
 
   const refreshListings = () => {
-    setLastRefresh(Date.now());
+    setSeenTokenIds(new Set());
+    setCursors([null]);
     setCurrentPage(0);
+    setListings([]);
+    fetchListings(null);
   };
 
   const removeInvalidListing = (tokenId: string) => {
@@ -274,6 +284,18 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     setShowPixSoon(true);
   };
 
+  const goToPreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (cursors[currentPage + 1] !== undefined) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -325,34 +347,34 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
       )}
 
       {/* Pagination */}
-      <div className="flex justify-center gap-4 mb-4">
+      <div className="flex justify-center items-center gap-4 mb-4">
         <button
-          onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+          onClick={goToPreviousPage}
           disabled={currentPage === 0}
           className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           Anterior
         </button>
         <span className="py-2 text-gray-800 font-semibold text-sm sm:text-base">
-          Página {currentPage + 1} de{" "}
-          {Math.ceil(listings.length / ITEMS_PER_PAGE)}
+          Página {currentPage + 1}
         </span>
         <button
-          onClick={() => setCurrentPage((p) => p + 1)}
-          disabled={currentPage >= Math.ceil(listings.length / ITEMS_PER_PAGE) - 1}
+          onClick={goToNextPage}
+          disabled={cursors[currentPage + 1] === undefined}
           className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           Próxima
         </button>
+        <button
+          onClick={refreshListings}
+          className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-yellow text-black rounded-lg font-bold hover:bg-rasta-yellow-dark transition-all shadow-md"
+        >
+          🔄 Atualizar
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-        {listings
-          .slice(
-            currentPage * ITEMS_PER_PAGE,
-            (currentPage + 1) * ITEMS_PER_PAGE
-          )
-          .map((nft) => (
+        {listings.map((nft) => (
             <div
               key={nft.tokenId}
               className="bg-gray-50 rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
