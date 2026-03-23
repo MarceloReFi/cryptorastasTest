@@ -332,19 +332,6 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         </div>
       )}
 
-      {/* Botão Refresh */}
-      <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-gray-600">
-          {listings.length} NFTs disponíveis
-        </p>
-        <button
-          onClick={() => { setError(null); refreshListings(); }}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all text-sm"
-        >
-          🔄 Atualizar
-        </button>
-      </div>
-
       {/* Pagination */}
       <div className="flex justify-center gap-4 mb-4">
         <button
