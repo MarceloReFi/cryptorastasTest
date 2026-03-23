@@ -45,7 +45,7 @@ export default function Home() {
                   RastaWallet
                 </h1>
                 <p className="text-gray-600">
-                  One love, inna decentralized way!
+                  One love, inna decentralized style!
                 </p>
               </div>
             </div>
@@ -67,7 +67,7 @@ export default function Home() {
                 },
               }}
               connectButton={{
-                label: "Conectar Carteira",
+                label: "Crie sua conta",
               }}
             />
           </div>
@@ -97,7 +97,7 @@ export default function Home() {
         ) : (
           <div className="bg-white p-6 rounded-lg shadow-2xl text-center">
             <p className="text-gray-600">
-              Conecte sua carteira para ver e comprar CryptoRastas
+              Entre com seu email ou conta Google.
             </p>
           </div>
         )}
