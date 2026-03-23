@@ -1,7 +1,7 @@
 "use client";
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { createThirdwebClient } from "thirdweb";
-import { inAppWallet } from "thirdweb/wallets";
+import { inAppWallet, createWallet } from "thirdweb/wallets";
 import { NFTGallery } from "./NFTGallery";
 import { useState, useEffect } from "react";
 import { Marketplace } from "./Marketplace";
@@ -51,9 +51,12 @@ export default function Home() {
               wallets={[
                 inAppWallet({
                   auth: {
-                    options: ["email", "google", "wallet"],
+                    options: ["email", "google"],
                   },
                 }),
+                createWallet("io.metamask"),
+                createWallet("com.coinbase.wallet"),
+                createWallet("me.rainbow"),
               ]}
               connectModal={{
                 size: "compact",
