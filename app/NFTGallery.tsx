@@ -89,10 +89,7 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
 
   if (nfts.length === 0) {
     return (
-      <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-8 text-center">
-        <h3 className="text-xl font-bold text-gray-800 mb-2">
-          Nenhum Cryptorasta encontrado
-        </h3>
+      <div className="bg-yellow-50 rounded-lg p-8 text-center">
         <p className="text-gray-600">
           Você ainda não tem Cryptorastas nesta carteira.
         </p>

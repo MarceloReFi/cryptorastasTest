@@ -45,7 +45,7 @@ export default function Home() {
                   RastaWallet
                 </h1>
                 <p className="text-gray-600">
-                  One luv, in a decentralized way
+                  One love, inna decentralized way!
                 </p>
               </div>
             </div>
@@ -94,9 +94,9 @@ export default function Home() {
               />
             </div>
             {/* Marketplace */}
-            <div className="bg-white p-6 rounded-lg shadow-2xl">
+            <div className="bg-transparent p-6 rounded-lg shadow-2xl">
               <h2 className="text-2xl font-bold mb-4 text-gray-900">
-                Cryptorastas Disponíveis
+                Cryptorastas disponíveis à venda
               </h2>
               <Marketplace itemsPerPage={isMobile ? 10 : 20} />
             </div>
