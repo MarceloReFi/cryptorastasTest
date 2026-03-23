@@ -442,7 +442,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
                       }}
                       className={`w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg ${
                         purchasing === nft.tokenId
-                          ? "bg-gray-400 cursor-not-allowed"
+                          ? "bg-gray-400 cursor-not-allowed text-gray-600"
                           : "bg-rasta-yellow hover:bg-rasta-yellow-dark text-black"
                       }`}
                       disabled={purchasing === nft.tokenId}
