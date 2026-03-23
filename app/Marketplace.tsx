@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useActiveAccount, useSendTransaction } from "thirdweb/react";
+import { useActiveAccount, TransactionButton } from "thirdweb/react";
 import { prepareTransaction, createThirdwebClient } from "thirdweb";
 import { ethereum } from "thirdweb/chains";
 
@@ -29,7 +29,6 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
   const [priceError, setPriceError] = useState<string | null>(null);
   const ITEMS_PER_PAGE = itemsPerPage;
   const account = useActiveAccount();
-  const { mutate: sendTransaction } = useSendTransaction();
 
   useEffect(() => {
     async function fetchListings() {
@@ -155,16 +154,9 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
     setListings((prev) => prev.filter((nft) => nft.tokenId !== tokenId));
   };
 
-  const handlePurchase = async (nft: any) => {
-    if (!account) {
-      alert("Por favor, conecte sua carteira primeiro!");
-      return;
-    }
-
-    setPurchasing(nft.tokenId);
-
+  const preparePurchaseTransaction = async (nft: any) => {
     try {
-      console.log("🔄 Iniciando compra...");
+      console.log("🔄 Preparando compra...");
       console.log("NFT:", nft.tokenId);
       console.log("Order Hash:", nft.orderHash);
 
@@ -173,26 +165,23 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderHash: nft.orderHash,
-          walletAddress: account.address,
+          walletAddress: account?.address,
           protocolAddress: nft.protocolAddress,
         }),
       });
 
       const result = await response.json();
-      console.log("📦 Resposta da API:", result);
 
       if (result.error) {
         if (result.error.includes("not found")) {
           removeInvalidListing(nft.tokenId);
           alert("❌ Este NFT já foi vendido. A lista será atualizada.");
-          setPurchasing(null);
-          return;
+          return null;
         }
         throw new Error(result.error);
       }
 
       if (!result.fulfillment_data?.transaction) {
-        console.error("❌ Estrutura completa:", JSON.stringify(result, null, 2));
         throw new Error("Dados de transação não encontrados");
       }
 
@@ -200,14 +189,8 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
       const params = txInfo.input_data?.parameters;
 
       if (!params) {
-        console.error("❌ Transaction info:", JSON.stringify(txInfo, null, 2));
         throw new Error("Parâmetros de transação não encontrados");
       }
-
-      console.log("✅ Parâmetros obtidos");
-      console.log("  - Function:", txInfo.function);
-      console.log("  - To:", txInfo.to);
-      console.log("  - Value:", txInfo.value);
 
       const { ethers } = await import("ethers");
 
@@ -264,41 +247,17 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
         [basicOrderParams]
       );
 
-      console.log("✅ Calldata encodado com sucesso!");
-      console.log("  - Data length:", txData.length);
-      console.log("  - Data preview:", txData.substring(0, 66) + "...");
-
-      const transaction = prepareTransaction({
+      return prepareTransaction({
         to: txInfo.to,
         chain: ethereum,
         client: client,
         data: txData as `0x${string}`,
         value: BigInt(txInfo.value),
       });
-
-      console.log("📤 Enviando transação via Thirdweb...");
-
-      sendTransaction(transaction, {
-        onSuccess: (result) => {
-          console.log("✅ Compra bem-sucedida:", result.transactionHash);
-          alert(
-            `✅ Compra realizada com sucesso!\n\n` +
-              `Transação: ${result.transactionHash}\n\n` +
-              `O NFT aparecerá na sua carteira em alguns minutos.`
-          );
-          removeInvalidListing(nft.tokenId);
-          setPurchasing(null);
-        },
-        onError: (error) => {
-          console.error("❌ Transação falhou:", error);
-          alert(`❌ Transação falhou:\n\n${error.message}`);
-          setPurchasing(null);
-        },
-      });
     } catch (error: any) {
-      console.error("💥 Erro na compra:", error);
+      console.error("💥 Erro ao preparar compra:", error);
       alert(`❌ Erro ao processar compra:\n\n${error.message}`);
-      setPurchasing(null);
+      return null;
     }
   };
 
@@ -425,19 +384,45 @@ export function Marketplace({ itemsPerPage = 20 }: { itemsPerPage?: number }) {
                     >
                       Comprar com PIX
                     </button>
-                    <button
-                      onClick={() => handlePurchase(nft)}
-                      disabled={purchasing === nft.tokenId}
+                    <TransactionButton
+                      transaction={async () => {
+                        const tx = await preparePurchaseTransaction(nft);
+                        if (!tx) throw new Error("Falha ao preparar transação");
+                        return tx;
+                      }}
+                      onTransactionSent={() => {
+                        setPurchasing(nft.tokenId);
+                      }}
+                      onTransactionConfirmed={(receipt) => {
+                        console.log("✅ Compra bem-sucedida:", receipt.transactionHash);
+                        alert(
+                          `✅ Compra realizada com sucesso!\n\n` +
+                            `Transação: ${receipt.transactionHash}\n\n` +
+                            `O NFT aparecerá na sua carteira em alguns minutos.`
+                        );
+                        removeInvalidListing(nft.tokenId);
+                        setPurchasing(null);
+                      }}
+                      onError={(error) => {
+                        console.error("❌ Transação falhou:", error);
+                        alert(`❌ Transação falhou:\n\n${error.message}`);
+                        setPurchasing(null);
+                      }}
+                      payModal={{
+                        metadata: {
+                          name: `Comprar Cryptorasta #${nft.tokenId}`,
+                          image: nft.image || "/Cryptorastas-logo-wide.png"
+                        }
+                      }}
                       className={`w-full py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg ${
                         purchasing === nft.tokenId
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-blue-500 hover:bg-blue-600 text-white"
                       }`}
+                      disabled={purchasing === nft.tokenId}
                     >
-                      {purchasing === nft.tokenId
-                        ? "Processando..."
-                        : "Comprar com ETH"}
-                    </button>
+                      {purchasing === nft.tokenId ? "Processando..." : "Comprar com ETH"}
+                    </TransactionButton>
                   </div>
                 ) : (
                   <button
