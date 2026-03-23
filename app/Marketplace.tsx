@@ -369,12 +369,6 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
         >
           Próxima
         </button>
-        <button
-          onClick={refreshListings}
-          className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-yellow text-black rounded-lg font-bold hover:bg-rasta-yellow-dark transition-all shadow-md"
-        >
-          Atualizar
-        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
