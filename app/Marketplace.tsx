@@ -424,9 +424,9 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
                           setPurchasing(nft.tokenId);
                         }}
                         onTransactionConfirmed={(receipt) => {
-                          console.log("✅ Compra bem-sucedida:", receipt.transactionHash);
+                          console.log("Compra bem-sucedida:", receipt.transactionHash);
                           alert(
-                            `✅ Compra realizada com sucesso!\n\n` +
+                            `Compra realizada com sucesso!\n\n` +
                               `Transação: ${receipt.transactionHash}\n\n` +
                               `O NFT aparecerá na sua carteira em alguns minutos.`
                           );
@@ -457,7 +457,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
                         }}
                         disabled={purchasing === nft.tokenId}
                       >
-                        {purchasing === nft.tokenId ? "Processando..." : "Comprar com ETH"}
+                        {purchasing === nft.tokenId ? "Processando..." : "Comprar com Crédito/ETH"}
                       </TransactionButton>
                     </div>
                   </div>
