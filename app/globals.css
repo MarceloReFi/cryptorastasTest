@@ -1,48 +1,127 @@
 @import "tailwindcss";
+@import "./styles/design-tokens.css";
 
+/* ============================================================
+   Root overrides — keep legacy rasta vars for compatibility
+   ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: var(--cr-bg);
+  --foreground: var(--cr-text-primary);
 
-  /* Cores Rasta */
-  --rasta-green: #00A651;
-  --rasta-green-dark: #008541;
-  --rasta-yellow: #FDB913;
+  /* Legacy Rasta vars (used by existing components) */
+  --rasta-green:       #00A651;
+  --rasta-green-dark:  #008541;
+  --rasta-yellow:      #FDB913;
   --rasta-yellow-dark: #F7931E;
-  --rasta-red: #ED1C24;
-  --rasta-red-dark: #C1272D;
-  --rasta-black: #000000;
+  --rasta-red:         #ED1C24;
+  --rasta-red-dark:    #C1272D;
+  --rasta-black:       #000000;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--cr-font-body);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ============================================================
+   Base
+   ============================================================ */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--cr-bg);
+  background-image:
+    radial-gradient(ellipse at 15% 60%, rgba(0, 166, 81, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 20%, rgba(237, 28, 36, 0.05) 0%, transparent 55%),
+    radial-gradient(ellipse at 55% 85%, rgba(253, 185, 19, 0.04) 0%, transparent 55%);
+  color: var(--cr-text-primary);
+  font-family: var(--cr-font-body);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Classes utilitárias Rasta */
-.bg-rasta-green { background-color: var(--rasta-green); }
+/* ============================================================
+   Typography utilities
+   ============================================================ */
+.font-display { font-family: var(--cr-font-display); }
+.font-body    { font-family: var(--cr-font-body); }
+.text-cream   { color: var(--cr-text-primary); }
+.text-muted   { color: var(--cr-text-secondary); }
+
+/* ============================================================
+   Legacy utility classes (kept for compatibility)
+   ============================================================ */
+.bg-rasta-green  { background-color: var(--rasta-green); }
 .bg-rasta-yellow { background-color: var(--rasta-yellow); }
-.bg-rasta-red { background-color: var(--rasta-red); }
-.hover\:bg-rasta-green-dark:hover { background-color: var(--rasta-green-dark); }
+.bg-rasta-red    { background-color: var(--rasta-red); }
+.hover\:bg-rasta-green-dark:hover  { background-color: var(--rasta-green-dark); }
 .hover\:bg-rasta-yellow-dark:hover { background-color: var(--rasta-yellow-dark); }
 .border-rasta-green { border-color: var(--rasta-green); }
 
-/* Gradiente Rasta */
+/* Dark background replaces the old vibrant gradient */
 .bg-rasta-gradient {
-  background: linear-gradient(135deg, #ED1C24 0%, #FDB913 50%, #00A651 100%);
+  background-color: var(--cr-bg);
+  background-image:
+    radial-gradient(ellipse at 15% 60%, rgba(0, 166, 81, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 20%, rgba(237, 28, 36, 0.05) 0%, transparent 55%),
+    radial-gradient(ellipse at 55% 85%, rgba(253, 185, 19, 0.04) 0%, transparent 55%);
 }
+
+/* ============================================================
+   Glass card
+   ============================================================ */
+.glass-card {
+  background: var(--cr-bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--cr-border);
+  border-radius: var(--cr-radius);
+  box-shadow: var(--cr-shadow-md);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  background: var(--cr-bg-card-hover);
+  border-color: var(--cr-border-accent);
+  box-shadow: var(--cr-shadow-lg), var(--cr-shadow-glow-yellow);
+  transform: scale(1.02);
+}
+
+/* ============================================================
+   Section containers
+   ============================================================ */
+.section-dark {
+  background: var(--cr-bg-section);
+  border: 1px solid var(--cr-border);
+  border-radius: var(--cr-radius-lg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.section-title {
+  font-family: var(--cr-font-display);
+  font-size: 1.75rem;
+  letter-spacing: 0.05em;
+  color: var(--cr-text-primary);
+}
+
+/* ============================================================
+   NFT Card metadata overlay
+   ============================================================ */
+.nft-card-overlay {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.nft-card:hover .nft-card-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   Scrollbar (subtle dark)
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--cr-bg-subtle); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }

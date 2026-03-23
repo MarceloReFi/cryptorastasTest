@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Alchemy, Network } from "alchemy-sdk";
+import { NFTCard } from "./components/NFTCard";
 
 interface NFTGalleryProps {
   walletAddress: string;
@@ -14,7 +15,6 @@ interface NFTData {
   image: string;
 }
 
-// CryptoRastas contract address on Ethereum mainnet
 const CRYPTORASTAS_CONTRACT = "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
 
 export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps) {
@@ -30,14 +30,11 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
         setLoading(true);
         setError(null);
 
-        const config = {
+        const alchemy = new Alchemy({
           apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY,
           network: Network.ETH_MAINNET,
-        };
+        });
 
-        const alchemy = new Alchemy(config);
-
-        // Fetch NFTs for the specific CryptoRastas collection
         const response = await alchemy.nft.getNftsForOwner(walletAddress, {
           contractAddresses: [CRYPTORASTAS_CONTRACT],
         });
@@ -55,45 +52,48 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
         setNfts(nftData);
       } catch (err) {
         console.error("Error fetching NFTs:", err);
-        setError("Failed to fetch NFTs. Please try again later.");
+        setError("Falha ao carregar NFTs. Tente novamente.");
       } finally {
         setLoading(false);
       }
     };
 
-    if (walletAddress) {
-      fetchNFTs();
-    }
+    if (walletAddress) fetchNFTs();
   }, [walletAddress]);
 
+  /* ── Loading ── */
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="relative">
-          <div className="w-12 h-12 border-4 border-green-200 rounded-full animate-spin border-t-green-600"></div>
-          <p className="text-gray-600 mt-4 text-center">
-            Carregando seus Cryptorastas...
-          </p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <div
+          className="w-10 h-10 rounded-full border-2 border-transparent animate-spin"
+          style={{ borderTopColor: "var(--cr-green)", borderRightColor: "var(--cr-yellow)" }}
+        />
+        <p className="text-sm" style={{ color: "var(--cr-text-secondary)" }}>
+          Carregando seus Cryptorastas...
+        </p>
       </div>
     );
   }
 
+  /* ── Error ── */
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-600">{error}</p>
+      <div
+        className="rounded-[var(--cr-radius)] p-6 text-center"
+        style={{ background: "rgba(237, 28, 36, 0.08)", border: "1px solid rgba(237, 28, 36, 0.2)" }}
+      >
+        <p style={{ color: "#f87171" }}>{error}</p>
       </div>
     );
   }
 
+  /* ── Empty ── */
   if (nfts.length === 0) {
     return (
-      <div className="rounded-lg p-8 text-center">
-        <p className="text-gray-600">
-          Você ainda não tem Cryptorastas.
-        </p>
-        <p className="text-sm text-gray-500 mt-2">
+      <div className="py-8 text-center">
+        <p style={{ color: "var(--cr-text-secondary)" }}>Você ainda não tem Cryptorastas.</p>
+        <p className="text-sm mt-1" style={{ color: "var(--cr-text-muted)" }}>
           Adquira a sua abaixo!
         </p>
       </div>
@@ -101,53 +101,44 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
   }
 
   const totalPages = Math.ceil(nfts.length / ITEMS_PER_PAGE);
-  const paginatedNfts = nfts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
+  const paginatedNfts = nfts.slice(
+    currentPage * ITEMS_PER_PAGE,
+    (currentPage + 1) * ITEMS_PER_PAGE
+  );
 
   return (
     <>
       {totalPages > 1 && (
-        <div className="flex justify-center gap-4 mb-4">
+        <div className="flex justify-center items-center gap-4 mb-6">
           <button
             onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
             disabled={currentPage === 0}
-            className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="px-5 py-2 rounded-[12px] font-bold text-white text-sm transition-all duration-300
+                       hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+            style={{ background: "var(--cr-green)", boxShadow: "0 4px 14px var(--cr-green-glow)" }}
           >
             Anterior
           </button>
-          <span className="py-2 text-gray-800 font-semibold text-sm sm:text-base">Página {currentPage + 1} de {totalPages}</span>
+          <span className="text-sm font-semibold" style={{ color: "var(--cr-text-secondary)" }}>
+            Página {currentPage + 1} de {totalPages}
+          </span>
           <button
             onClick={() => setCurrentPage((p) => p + 1)}
             disabled={currentPage >= totalPages - 1}
-            className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="px-5 py-2 rounded-[12px] font-bold text-white text-sm transition-all duration-300
+                       hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+            style={{ background: "var(--cr-green)", boxShadow: "0 4px 14px var(--cr-green-glow)" }}
           >
             Próxima
           </button>
         </div>
       )}
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {paginatedNfts.map((nft) => (
-        <div
-          key={nft.tokenId}
-          className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-        >
-          <div className="w-full h-56 bg-gray-100 flex items-center justify-center">
-            {nft.image ? (
-              <img
-                src={nft.image}
-                alt={nft.title}
-                className="max-w-full max-h-full object-contain"
-              />
-            ) : (
-              <span className="text-gray-400 text-sm">Sem imagem</span>
-            )}
-          </div>
-          <div className="p-3 sm:p-4">
-            <h3 className="font-bold text-gray-800 truncate">{nft.title}</h3>
-            <p className="text-sm text-gray-600">Token #{nft.tokenId}</p>
-          </div>
-        </div>
-      ))}
-    </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {paginatedNfts.map((nft) => (
+          <NFTCard key={nft.tokenId} tokenId={nft.tokenId} name={nft.title} image={nft.image} />
+        ))}
+      </div>
     </>
   );
 }

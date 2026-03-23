@@ -1,0 +1,47 @@
+/* ============================================================
+   CryptoRastas Premium Design Tokens
+   ============================================================ */
+
+:root {
+  /* --- Backgrounds --- */
+  --cr-bg:           #1a1a1a;
+  --cr-bg-subtle:    #222222;
+  --cr-bg-card:      rgba(255, 255, 255, 0.06);
+  --cr-bg-card-hover:rgba(255, 255, 255, 0.10);
+  --cr-bg-section:   rgba(0, 0, 0, 0.35);
+
+  /* --- Borders --- */
+  --cr-border:       rgba(255, 255, 255, 0.10);
+  --cr-border-accent:rgba(253, 185, 19, 0.35);
+
+  /* --- Accent Colors (Rasta palette) --- */
+  --cr-green:        #00A651;
+  --cr-green-dark:   #008541;
+  --cr-green-glow:   rgba(0, 166, 81, 0.30);
+  --cr-yellow:       #FDB913;
+  --cr-yellow-dark:  #F7931E;
+  --cr-yellow-glow:  rgba(253, 185, 19, 0.30);
+  --cr-red:          #ED1C24;
+  --cr-red-dark:     #C1272D;
+
+  /* --- Text --- */
+  --cr-text-primary:   #f0ece4;
+  --cr-text-secondary: #a89f8c;
+  --cr-text-muted:     #6b6358;
+
+  /* --- Shadows --- */
+  --cr-shadow-sm:         0 2px 8px  rgba(0, 0, 0, 0.45);
+  --cr-shadow-md:         0 4px 16px rgba(0, 0, 0, 0.55);
+  --cr-shadow-lg:         0 8px 32px rgba(0, 0, 0, 0.65);
+  --cr-shadow-glow-green: 0 4px 20px rgba(0, 166, 81, 0.28);
+  --cr-shadow-glow-yellow:0 4px 20px rgba(253, 185, 19, 0.28);
+
+  /* --- Shape --- */
+  --cr-radius:    12px;
+  --cr-radius-sm:  8px;
+  --cr-radius-lg: 20px;
+
+  /* --- Typography --- */
+  --cr-font-display: 'Bebas Neue', 'Oswald', sans-serif;
+  --cr-font-body:    'Inter', 'Poppins', sans-serif;
+}

@@ -1,10 +1,12 @@
 "use client";
+
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { createThirdwebClient } from "thirdweb";
 import { inAppWallet } from "thirdweb/wallets";
-import { NFTGallery } from "./NFTGallery";
 import { useState, useEffect } from "react";
+import { NFTGallery } from "./NFTGallery";
 import { Marketplace } from "./Marketplace";
+import { HeroSection } from "./components/HeroSection";
 
 const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
@@ -25,75 +27,70 @@ export default function Home() {
   const account = useActiveAccount();
   const isMobile = useIsMobile();
 
-  return (
-    <div className="min-h-screen bg-rasta-gradient p-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="bg-white p-6 rounded-lg shadow-2xl mb-6 border-t-4 border-rasta-green">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-4">
-              <img
-                src="/cryptorastas01-sticker.jpg"
-                alt="CryptoRastas Logo"
-                className="h-12 w-auto"
-              />
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">
-                  RastaWallet
-                </h1>
-                <p className="text-gray-600">
-                  One love, inna decentralized style!
-                </p>
-              </div>
-            </div>
-            <ConnectButton
-              client={client}
-              wallets={[
-                inAppWallet({
-                  auth: {
-                    options: ["email", "google", "wallet"],
-                  },
-                }),
-              ]}
-              connectModal={{
-                size: "compact",
-                title: "Crie uma nova conta",
-                welcomeScreen: {
-                  title: "Bem-vindo à Rasta Wallet",
-                  subtitle: "Compre CryptoRastas de forma simples",
-                },
-              }}
-              connectButton={{
-                label: "Crie sua conta",
-              }}
-            />
-          </div>
-        </div>
+  const connectButton = (
+    <ConnectButton
+      client={client}
+      wallets={[
+        inAppWallet({
+          auth: { options: ["email", "google", "wallet"] },
+        }),
+      ]}
+      connectModal={{
+        size: "compact",
+        title: "Crie uma nova conta",
+        welcomeScreen: {
+          title: "Bem-vindo à Rasta Wallet",
+          subtitle: "Compre CryptoRastas de forma simples",
+        },
+      }}
+      connectButton={{ label: "Crie sua conta" }}
+    />
+  );
 
-        {/* Conteúdo unificado */}
-        {account && (
-          <div className="space-y-6">
-            {/* Minhas CryptoRastas */}
-            <div className="bg-white p-6 rounded-lg shadow-2xl">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900">
-                Meus Cryptorastas
-              </h2>
+  return (
+    <div className="min-h-screen">
+      {/* Hero / Header */}
+      <HeroSection connectButton={connectButton} />
+
+      {/* Main content */}
+      <main className="max-w-6xl mx-auto px-4 pb-16 space-y-8">
+        {account ? (
+          <>
+            {/* My Collection */}
+            <section className="section-dark p-6">
+              <h2 className="section-title mb-5">Meus Cryptorastas</h2>
               <NFTGallery
                 walletAddress={account.address}
                 itemsPerPage={isMobile ? 10 : 20}
               />
-            </div>
+            </section>
 
             {/* Marketplace */}
-            <div className="bg-transparent p-6 rounded-lg shadow-2xl">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900">
-                Cryptorastas disponíveis à venda
-              </h2>
+            <section className="section-dark p-6">
+              <h2 className="section-title mb-5">Disponíveis à Venda</h2>
               <Marketplace itemsPerPage={isMobile ? 10 : 20} />
-            </div>
+            </section>
+          </>
+        ) : (
+          /* Not connected — teaser */
+          <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+            <p className="text-lg font-medium" style={{ color: "var(--cr-text-secondary)" }}>
+              Conecte sua carteira para ver sua coleção e comprar Cryptorastas.
+            </p>
           </div>
         )}
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer
+        className="border-t py-8 text-center text-sm"
+        style={{
+          borderColor: "var(--cr-border)",
+          color: "var(--cr-text-muted)",
+        }}
+      >
+        <p>© {new Date().getFullYear()} CryptoRastas · One love, inna decentralized style!</p>
+      </footer>
     </div>
   );
 }
