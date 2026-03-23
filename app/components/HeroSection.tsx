@@ -78,8 +78,9 @@ export function HeroSection({ connectButton }: HeroSectionProps) {
             <img
               src="/cryptorastas01-sticker.jpg"
               alt="CryptoRastas Logo"
-              className="h-12 w-12 rounded-full object-cover"
+              className="h-16 w-16 object-cover"
               style={{
+                borderRadius: "var(--cr-radius)",
                 border: "2px solid var(--cr-yellow)",
                 boxShadow: "0 0 12px var(--cr-yellow-glow)",
               }}
