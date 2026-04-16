@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alchemy, Network } from "alchemy-sdk";
 
 interface NFTGalleryProps {
   walletAddress: string;
@@ -13,9 +12,6 @@ interface NFTData {
   title: string;
   image: string;
 }
-
-// CryptoRastas contract address on Ethereum mainnet
-const CRYPTORASTAS_CONTRACT = "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
 
 export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps) {
   const [nfts, setNfts] = useState<NFTData[]>([]);
@@ -30,27 +26,8 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
         setLoading(true);
         setError(null);
 
-        const config = {
-          apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY,
-          network: Network.ETH_MAINNET,
-        };
-
-        const alchemy = new Alchemy(config);
-
-        // Fetch NFTs for the specific CryptoRastas collection
-        const response = await alchemy.nft.getNftsForOwner(walletAddress, {
-          contractAddresses: [CRYPTORASTAS_CONTRACT],
-        });
-
-        const nftData: NFTData[] = response.ownedNfts.map((nft) => ({
-          tokenId: nft.tokenId,
-          title: nft.name || `CryptoRasta #${nft.tokenId}`,
-          image:
-            nft.image?.cachedUrl ||
-            nft.image?.thumbnailUrl ||
-            nft.image?.originalUrl ||
-            "",
-        }));
+        const response = await fetch(`/api/nft-owner?wallet=${walletAddress}`);
+        const nftData: NFTData[] = await response.json();
 
         setNfts(nftData);
       } catch (err) {

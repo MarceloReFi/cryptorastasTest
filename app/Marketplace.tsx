@@ -44,22 +44,13 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
         return;
       }
 
-      let url = `https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=${ITEMS_PER_PAGE}`;
-      if (cursor) {
-        url += `&next=${cursor}`;
-      }
-
       console.log("🔍 Buscando listings:", cursor ? `página ${pageNumber + 1}` : "primeira página");
 
-      const response = await fetch(url, {
-        headers: {
-          "X-API-KEY": process.env.NEXT_PUBLIC_OPENSEA_API_KEY || "",
-          "Content-Type": "application/json",
-        },
-      });
+      const apiUrl = `/api/opensea-listings?limit=${ITEMS_PER_PAGE}${cursor ? `&cursor=${cursor}` : ""}`;
+      const response = await fetch(apiUrl);
 
       if (!response.ok) {
-        console.error("❌ Erro na API OpenSea:", response.status, response.statusText);
+        console.error("❌ Erro na API opensea-listings:", response.status, response.statusText);
         setListings([]);
         return;
       }
@@ -78,46 +69,17 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
         setCursors(prev => [...prev, data.next]);
       }
 
-      const nftsWithDetails = await Promise.all(
-        data.listings.map(async (listing: any) => {
-          try {
-            const tokenId = listing.protocol_data?.parameters?.offer?.[0]?.identifierOrCriteria;
-            const contractAddress = listing.protocol_data?.parameters?.offer?.[0]?.token || "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
+      const { listings: fetchedListings, next: _next } = data;
 
-            if (!tokenId) {
-              console.warn("⚠️ Listing sem token_id:", listing.order_hash);
-              return null;
-            }
+      // Preserve fullOrder shape expected by purchase flow (protocolAddress fallback)
+      const enriched = fetchedListings.map((nft: any) => ({
+        ...nft,
+        protocolAddress: nft.protocolAddress || SEAPORT_1_6_ADDRESS,
+      }));
 
-            const nftResponse = await fetch(
-              `https://eth-mainnet.g.alchemy.com/nft/v3/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}/getNFTMetadata?contractAddress=${contractAddress}&tokenId=${tokenId}`,
-              { headers: { accept: "application/json" } }
-            );
-
-            const nftData = await nftResponse.json();
-
-            return {
-              tokenId,
-              name: nftData.name || `Cryptorasta #${tokenId}`,
-              image: nftData.image?.cachedUrl || nftData.image?.originalUrl || "",
-              price: listing.price?.current?.value || "0",
-              decimals: listing.price?.current?.decimals || 18,
-              orderHash: listing.order_hash,
-              protocolAddress: listing.protocol_address || SEAPORT_1_6_ADDRESS,
-              fullOrder: listing,
-            };
-          } catch (error) {
-            console.error("❌ Erro processando listing:", error);
-            return null;
-          }
-        })
-      );
-
-      const validListings = nftsWithDetails.filter((nft) => nft !== null);
-      
       // Remove duplicados dentro da mesma página
       const seenInPage = new Set<string>();
-      const uniqueListings = validListings.filter(nft => {
+      const uniqueListings = enriched.filter((nft: any) => {
         if (seenInPage.has(nft.tokenId)) {
           return false;
         }
@@ -125,7 +87,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
         return true;
       });
 
-      console.log(`✅ ${uniqueListings.length} NFTs únicos carregados (de ${validListings.length} válidos)`);
+      console.log(`✅ ${uniqueListings.length} NFTs únicos carregados`);
       
       // Adicionar ao cache
       setPagesCache(prev => new Map(prev).set(pageNumber, uniqueListings));
