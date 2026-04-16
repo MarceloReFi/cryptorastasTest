@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 
 interface NFTGalleryProps {
@@ -13,117 +12,104 @@ interface NFTData {
   image: string;
 }
 
+const btnStyle = (disabled: boolean) => ({
+  padding: "0.5rem 1.5rem",
+  borderRadius: "8px",
+  fontWeight: 600,
+  fontSize: "0.875rem",
+  border: "1px solid var(--outline-variant)",
+  background: disabled ? "var(--surface-mid)" : "var(--surface-high)",
+  color: disabled ? "var(--on-surface-variant)" : "var(--on-background)",
+  cursor: disabled ? "not-allowed" : "pointer",
+  opacity: disabled ? 0.5 : 1,
+  transition: "all 0.2s",
+});
+
 export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps) {
   const [nfts, setNfts] = useState<NFTData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const ITEMS_PER_PAGE = itemsPerPage;
 
   useEffect(() => {
     const fetchNFTs = async () => {
       try {
         setLoading(true);
         setError(null);
-
         const response = await fetch(`/api/nft-owner?wallet=${walletAddress}`);
         const nftData: NFTData[] = await response.json();
-
         setNfts(nftData);
-      } catch (err) {
-        console.error("Error fetching NFTs:", err);
-        setError("Failed to fetch NFTs. Please try again later.");
+      } catch {
+        setError("Erro ao carregar NFTs. Tente novamente.");
       } finally {
         setLoading(false);
       }
     };
-
-    if (walletAddress) {
-      fetchNFTs();
-    }
+    if (walletAddress) fetchNFTs();
   }, [walletAddress]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="relative">
-          <div className="w-12 h-12 border-4 border-green-200 rounded-full animate-spin border-t-green-600"></div>
-          <p className="text-gray-600 mt-4 text-center">
-            Carregando seus Cryptorastas...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ textAlign: "center", padding: "3rem 0" }}>
+      <div style={{
+        width: "2.5rem", height: "2.5rem", borderRadius: "50%",
+        border: "3px solid var(--surface-high)",
+        borderTopColor: "var(--gold)",
+        animation: "spin 0.8s linear infinite",
+        margin: "0 auto",
+      }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <p style={{ color: "var(--on-surface-variant)", marginTop: "1rem" }}>Carregando seus Cryptorastas...</p>
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
+  if (error) return (
+    <div style={{ background: "var(--red-container)", borderRadius: "8px", padding: "1.5rem", textAlign: "center" }}>
+      <p style={{ color: "var(--red)" }}>{error}</p>
+    </div>
+  );
 
-  if (nfts.length === 0) {
-    return (
-      <div className="rounded-lg p-8 text-center">
-        <p className="text-gray-600">
-          Você ainda não tem Cryptorastas.
-        </p>
-        <p className="text-sm text-gray-500 mt-2">
-          Adquira a sua abaixo!
-        </p>
-      </div>
-    );
-  }
+  if (nfts.length === 0) return (
+    <div style={{ padding: "2rem", textAlign: "center" }}>
+      <p style={{ color: "var(--on-surface-variant)" }}>Você ainda não tem Cryptorastas.</p>
+      <p style={{ color: "var(--on-surface-variant)", fontSize: "0.8125rem", marginTop: "0.5rem", opacity: 0.7 }}>Adquira a sua abaixo!</p>
+    </div>
+  );
 
-  const totalPages = Math.ceil(nfts.length / ITEMS_PER_PAGE);
-  const paginatedNfts = nfts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(nfts.length / itemsPerPage);
+  const paginatedNfts = nfts.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
   return (
     <>
       {totalPages > 1 && (
-        <div className="flex justify-center gap-4 mb-4">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-            disabled={currentPage === 0}
-            className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            Anterior
-          </button>
-          <span className="py-2 text-gray-800 font-semibold text-sm sm:text-base">Página {currentPage + 1} de {totalPages}</span>
-          <button
-            onClick={() => setCurrentPage((p) => p + 1)}
-            disabled={currentPage >= totalPages - 1}
-            className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-rasta-green text-white rounded-lg font-bold hover:bg-rasta-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            Próxima
-          </button>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
+          <button style={btnStyle(currentPage === 0)} disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)}>Anterior</button>
+          <span style={{ color: "var(--on-surface-variant)", fontSize: "0.875rem" }}>Página {currentPage + 1} de {totalPages}</span>
+          <button style={btnStyle(currentPage >= totalPages - 1)} disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage(p => p + 1)}>Próxima</button>
         </div>
       )}
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {paginatedNfts.map((nft) => (
-        <div
-          key={nft.tokenId}
-          className="rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-        >
-          {nft.image ? (
-            <img
-              src={nft.image}
-              alt={nft.title}
-              className="w-full h-auto block"
-            />
-          ) : (
-            <div className="w-full h-56 flex items-center justify-center bg-gray-200 rounded-lg">
-              <span className="text-gray-400 text-sm">Sem imagem</span>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "1rem" }}>
+        {paginatedNfts.map((nft) => (
+          <div key={nft.tokenId} style={{
+            background: "var(--surface-high)",
+            borderRadius: "12px",
+            overflow: "hidden",
+            transition: "transform 0.2s",
+          }}
+            onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.03)")}
+            onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            {nft.image
+              ? <img src={nft.image} alt={nft.title} style={{ width: "100%", display: "block" }} />
+              : <div style={{ width: "100%", aspectRatio: "1", background: "var(--surface-mid)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "var(--on-surface-variant)", fontSize: "0.75rem" }}>Sem imagem</span>
+                </div>
+            }
+            <div style={{ padding: "0.5rem", textAlign: "center" }}>
+              <p style={{ fontSize: "0.8125rem", color: "var(--on-surface-variant)" }}>#{nft.tokenId}</p>
             </div>
-          )}
-          <div className="p-2 text-center">
-            <p className="text-sm text-gray-700 font-medium">#{nft.tokenId}</p>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
     </>
   );
 }
