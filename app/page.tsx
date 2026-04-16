@@ -26,6 +26,8 @@ const connectModalConfig = {
   },
 };
 
+const font = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -38,7 +40,7 @@ function useIsMobile() {
 }
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
-function Navbar({ heroMode = false }: { heroMode?: boolean }) {
+function Navbar({ heroMode = false, showConnect = false }: { heroMode?: boolean; showConnect?: boolean }) {
   const color = heroMode ? "var(--hero-text)" : "var(--on-background)";
   return (
     <nav style={{
@@ -49,24 +51,25 @@ function Navbar({ heroMode = false }: { heroMode?: boolean }) {
       position: "relative",
       zIndex: 10,
     }}>
-      <span style={{
-        fontFamily: "'Manrope', sans-serif",
-        fontWeight: 700,
-        fontSize: "1.375rem",
-        color,
-        letterSpacing: "-0.02em",
-      }}>
-        RastaWallet
-      </span>
-      <span style={{
-        fontFamily: "'Inter', sans-serif",
-        fontSize: "0.6875rem",
-        letterSpacing: "0.18em",
-        color,
-        opacity: 0.6,
-      }}>
-        SUPPORT
-      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+        <img
+          src="/cryptorastas01-sticker.png"
+          alt="Rasta Logo"
+          style={{ height: "2rem", width: "auto" }}
+        />
+        <span style={{
+          fontFamily: font,
+          fontWeight: 700,
+          fontSize: "1.375rem",
+          color,
+          letterSpacing: "-0.02em",
+        }}>
+          RastaWallet
+        </span>
+      </div>
+      {showConnect && (
+        <ConnectButton client={client} wallets={wallets} connectModal={connectModalConfig} />
+      )}
     </nav>
   );
 }
@@ -86,7 +89,7 @@ function Hero() {
         padding: "2rem",
       }}>
         <p style={{
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: font,
           fontSize: "0.6875rem",
           letterSpacing: "0.2em",
           color: "var(--hero-text)",
@@ -97,9 +100,9 @@ function Hero() {
         </p>
 
         <h1 style={{
-          fontFamily: "'Manrope', sans-serif",
+          fontFamily: font,
           fontWeight: 300,
-          fontSize: "clamp(3rem, 9vw, 7.5rem)",
+          fontSize: "clamp(1.5rem, 4.5vw, 3.75rem)",
           lineHeight: 1.05,
           color: "var(--hero-text)",
           margin: "0 0 3rem 0",
@@ -121,7 +124,7 @@ function Hero() {
               border: "1.5px solid var(--hero-text)",
               borderRadius: "12px",
               color: "var(--hero-text)",
-              fontFamily: "'Inter', sans-serif",
+              fontFamily: font,
               fontSize: "0.9375rem",
               fontWeight: 400,
               padding: "0.875rem 3rem",
@@ -141,16 +144,12 @@ function App({ address, isMobile }: { address: string; isMobile: boolean }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--surface)" }}>
-      <Navbar />
-
-      <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 2.5rem 1rem" }}>
-        <ConnectButton client={client} wallets={wallets} connectModal={connectModalConfig} />
-      </div>
+      <Navbar showConnect />
 
       <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem 4rem" }}>
         <section style={{ marginBottom: "4rem" }}>
           <h2 style={{
-            fontFamily: "'Manrope', sans-serif",
+            fontFamily: font,
             fontSize: "1.5rem",
             fontWeight: 500,
             color: "var(--on-background)",
@@ -165,7 +164,7 @@ function App({ address, isMobile }: { address: string; isMobile: boolean }) {
 
         <section>
           <h2 style={{
-            fontFamily: "'Manrope', sans-serif",
+            fontFamily: font,
             fontSize: "1.5rem",
             fontWeight: 500,
             color: "var(--on-background)",

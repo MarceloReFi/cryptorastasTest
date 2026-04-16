@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -17,16 +16,13 @@
   --green:              #4caf7d;
   --hero-bg:            #FFD800;
   --hero-text:          #1a1500;
+  --font:               "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 body {
   background: var(--surface);
   color: var(--on-background);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font);
   font-size: 0.875rem;
   line-height: 1.6;
-}
-
-h1, h2, h3, .display {
-  font-family: 'Manrope', sans-serif;
 }
