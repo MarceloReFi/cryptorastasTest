@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 const CRYPTORASTAS_CONTRACT = "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
 
+const metadataCache = new Map<string, { name: string; image: string; cachedAt: number }>();
+const METADATA_TTL = 60 * 60 * 1000; // 1 hour
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const limit = searchParams.get("limit") || "30";
@@ -42,17 +45,28 @@ export async function GET(request: NextRequest) {
           return null;
         }
 
-        const nftResponse = await fetch(
-          `https://eth-mainnet.g.alchemy.com/nft/v3/${process.env.ALCHEMY_API_KEY}/getNFTMetadata?contractAddress=${CRYPTORASTAS_CONTRACT}&tokenId=${tokenId}`,
-          { headers: { accept: "application/json" } }
-        );
+        const cached = metadataCache.get(tokenId);
+        let name: string;
+        let image: string;
 
-        const nftData = await nftResponse.json();
+        if (cached && Date.now() - cached.cachedAt < METADATA_TTL) {
+          ({ name, image } = cached);
+        } else {
+          const nftResponse = await fetch(
+            `https://eth-mainnet.g.alchemy.com/nft/v3/${process.env.ALCHEMY_API_KEY}/getNFTMetadata?contractAddress=${CRYPTORASTAS_CONTRACT}&tokenId=${tokenId}`,
+            { headers: { accept: "application/json" } }
+          );
+
+          const nftData = await nftResponse.json();
+          name = nftData.name || `Cryptorasta #${tokenId}`;
+          image = nftData.image?.cachedUrl || nftData.image?.originalUrl || "";
+          metadataCache.set(tokenId, { name, image, cachedAt: Date.now() });
+        }
 
         return {
           tokenId,
-          name: nftData.name || `Cryptorasta #${tokenId}`,
-          image: nftData.image?.cachedUrl || nftData.image?.originalUrl || "",
+          name,
+          image,
           price: listing.price?.current?.value || "0",
           decimals: listing.price?.current?.decimals || 18,
           orderHash: listing.order_hash,
