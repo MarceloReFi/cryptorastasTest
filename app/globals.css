@@ -1,48 +1,32 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-
-  /* Cores Rasta */
-  --rasta-green: #00A651;
-  --rasta-green-dark: #008541;
-  --rasta-yellow: #FDB913;
-  --rasta-yellow-dark: #F7931E;
-  --rasta-red: #ED1C24;
-  --rasta-red-dark: #C1272D;
-  --rasta-black: #000000;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --surface:            #0e0e0e;
+  --surface-low:        #131313;
+  --surface-mid:        #191a1a;
+  --surface-high:       #262626;
+  --surface-bright:     #2c2c2c;
+  --on-background:      #e7e5e4;
+  --on-surface-variant: #acabaa;
+  --outline-variant:    #484848;
+  --gold:               #ffc563;
+  --gold-container:     #3d2e00;
+  --red:                #ff7166;
+  --red-container:      #7d0009;
+  --green:              #4caf7d;
+  --hero-bg:            #FFD800;
+  --hero-text:          #1a1500;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface);
+  color: var(--on-background);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
-/* Classes utilitárias Rasta */
-.bg-rasta-green { background-color: var(--rasta-green); }
-.bg-rasta-yellow { background-color: var(--rasta-yellow); }
-.bg-rasta-red { background-color: var(--rasta-red); }
-.hover\:bg-rasta-green-dark:hover { background-color: var(--rasta-green-dark); }
-.hover\:bg-rasta-yellow-dark:hover { background-color: var(--rasta-yellow-dark); }
-.border-rasta-green { border-color: var(--rasta-green); }
-
-/* Gradiente Rasta */
-.bg-rasta-gradient {
-  background: linear-gradient(135deg, #ED1C24 0%, #FDB913 50%, #00A651 100%);
+h1, h2, h3, .display {
+  font-family: 'Manrope', sans-serif;
 }
