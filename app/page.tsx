@@ -93,7 +93,7 @@ function Hero() {
           opacity: 0.45,
           marginBottom: "1.5rem",
         }}>
-          PREMIUM CRYPTO CUSTODY
+       
         </p>
 
         <h1 style={{
