@@ -71,7 +71,6 @@ export function NFTGallery({ walletAddress, itemsPerPage = 20 }: NFTGalleryProps
   if (nfts.length === 0) return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
       <p style={{ color: "var(--on-surface-variant)" }}>Você ainda não tem Cryptorastas.</p>
-      <p style={{ color: "var(--on-surface-variant)", fontSize: "0.8125rem", marginTop: "0.5rem", opacity: 0.7 }}>Adquira a sua abaixo!</p>
     </div>
   );
 
