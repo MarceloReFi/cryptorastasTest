@@ -78,9 +78,7 @@ function Hero() {
     <div style={{ minHeight: "100vh", background: "var(--hero-bg)", display: "flex", flexDirection: "column" }}>
       <Navbar />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "2rem" }}>
-        <p style={{ fontFamily: font, fontSize: "0.6875rem", letterSpacing: "0.2em", color: "var(--hero-text)", opacity: 0.45, marginBottom: "1.5rem" }}>
-          PREMIUM CRYPTO CUSTODY
-        </p>
+    
         <h1 style={{ fontFamily: font, fontWeight: 300, fontSize: "clamp(1.5rem, 4.5vw, 3.75rem)", lineHeight: 1.05, color: "var(--hero-text)", margin: "0 0 3rem 0", maxWidth: "900px" }}>
           one love<br />inna decentralized<br />style!
         </h1>
