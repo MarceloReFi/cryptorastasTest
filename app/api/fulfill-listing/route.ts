@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-API-KEY": process.env.NEXT_PUBLIC_OPENSEA_API_KEY || "",
+          "X-API-KEY": process.env.OPENSEA_API_KEY || "",
         },
         body: JSON.stringify(requestBody),
       }
