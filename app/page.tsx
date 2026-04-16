@@ -28,6 +28,17 @@ const connectModalConfig = {
 
 const font = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 
+// Redefine CSS vars nos filhos para o tema amarelo
+const yellowTheme = {
+  "--on-background":      "#1a1500",
+  "--on-surface-variant": "rgba(26,21,0,0.55)",
+  "--outline-variant":    "rgba(26,21,0,0.2)",
+  "--surface-high":       "rgba(255,255,255,0.65)",
+  "--surface-mid":        "rgba(255,255,255,0.4)",
+  "--surface-bright":     "rgba(255,255,255,0.85)",
+  "--gold":               "#7a5c00",
+} as React.CSSProperties;
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -39,9 +50,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-// ─── Nav ──────────────────────────────────────────────────────────────────────
-function Navbar({ heroMode = false, showConnect = false }: { heroMode?: boolean; showConnect?: boolean }) {
-  const color = heroMode ? "var(--hero-text)" : "var(--on-background)";
+function Navbar({ showConnect = false }: { showConnect?: boolean }) {
   return (
     <nav style={{
       display: "flex",
@@ -52,18 +61,8 @@ function Navbar({ heroMode = false, showConnect = false }: { heroMode?: boolean;
       zIndex: 10,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-        <img
-          src="/cryptorastas01-sticker.png"
-          alt="Rasta Logo"
-          style={{ height: "2rem", width: "auto" }}
-        />
-        <span style={{
-          fontFamily: font,
-          fontWeight: 700,
-          fontSize: "1.375rem",
-          color,
-          letterSpacing: "-0.02em",
-        }}>
+        <img src="/cryptorastas01-sticker.png" alt="Rasta Logo" style={{ height: "2rem", width: "auto" }} />
+        <span style={{ fontFamily: font, fontWeight: 700, fontSize: "1.375rem", color: "var(--hero-text)", letterSpacing: "-0.02em" }}>
           RastaWallet
         </span>
       </div>
@@ -74,45 +73,17 @@ function Navbar({ heroMode = false, showConnect = false }: { heroMode?: boolean;
   );
 }
 
-// ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--hero-bg)", display: "flex", flexDirection: "column" }}>
-      <Navbar heroMode />
-      <div style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-        padding: "2rem",
-      }}>
-        <p style={{
-          fontFamily: font,
-          fontSize: "0.6875rem",
-          letterSpacing: "0.2em",
-          color: "var(--hero-text)",
-          opacity: 0.45,
-          marginBottom: "1.5rem",
-        }}>
-       
+      <Navbar />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "2rem" }}>
+        <p style={{ fontFamily: font, fontSize: "0.6875rem", letterSpacing: "0.2em", color: "var(--hero-text)", opacity: 0.45, marginBottom: "1.5rem" }}>
+          PREMIUM CRYPTO CUSTODY
         </p>
-
-        <h1 style={{
-          fontFamily: font,
-          fontWeight: 300,
-          fontSize: "clamp(1.5rem, 4.5vw, 3.75rem)",
-          lineHeight: 1.05,
-          color: "var(--hero-text)",
-          margin: "0 0 3rem 0",
-          maxWidth: "900px",
-        }}>
-          one love<br />
-          inna decentralized<br />
-          style!
+        <h1 style={{ fontFamily: font, fontWeight: 300, fontSize: "clamp(1.5rem, 4.5vw, 3.75rem)", lineHeight: 1.05, color: "var(--hero-text)", margin: "0 0 3rem 0", maxWidth: "900px" }}>
+          one love<br />inna decentralized<br />style!
         </h1>
-
         <ConnectButton
           client={client}
           wallets={wallets}
@@ -138,38 +109,20 @@ function Hero() {
   );
 }
 
-// ─── App (autenticado) ────────────────────────────────────────────────────────
 function App({ address, isMobile }: { address: string; isMobile: boolean }) {
   const itemsPerPage = isMobile ? 10 : 20;
-
   return (
-    <div style={{ minHeight: "100vh", background: "var(--surface)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--hero-bg)", ...yellowTheme }}>
       <Navbar showConnect />
-
       <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 2rem 4rem" }}>
         <section style={{ marginBottom: "4rem" }}>
-          <h2 style={{
-            fontFamily: font,
-            fontSize: "1.5rem",
-            fontWeight: 500,
-            color: "var(--on-background)",
-            marginBottom: "1.5rem",
-          }}>
+          <h2 style={{ fontFamily: font, fontSize: "1.5rem", fontWeight: 500, color: "var(--hero-text)", marginBottom: "1.5rem" }}>
             Meus Cryptorastas
           </h2>
-          <div style={{ background: "var(--surface-low)", borderRadius: "16px", padding: "1.5rem" }}>
-            <NFTGallery walletAddress={address} itemsPerPage={itemsPerPage} />
-          </div>
+          <NFTGallery walletAddress={address} itemsPerPage={itemsPerPage} />
         </section>
-
         <section>
-          <h2 style={{
-            fontFamily: font,
-            fontSize: "1.5rem",
-            fontWeight: 500,
-            color: "var(--on-background)",
-            marginBottom: "1.5rem",
-          }}>
+          <h2 style={{ fontFamily: font, fontSize: "1.5rem", fontWeight: 500, color: "var(--hero-text)", marginBottom: "1.5rem" }}>
             Cryptorastas disponíveis
           </h2>
           <Marketplace itemsPerPage={itemsPerPage} />
@@ -179,11 +132,9 @@ function App({ address, isMobile }: { address: string; isMobile: boolean }) {
   );
 }
 
-// ─── Root ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   const account = useActiveAccount();
   const isMobile = useIsMobile();
-
   if (!account) return <Hero />;
   return <App address={account.address} isMobile={isMobile} />;
 }
