@@ -121,7 +121,7 @@ function App({ address, isMobile }: { address: string; isMobile: boolean }) {
         </section>
         <section>
           <h2 style={{ fontFamily: font, fontSize: "1.5rem", fontWeight: 500, color: "var(--hero-text)", marginBottom: "1.5rem" }}>
-            Cryptorastas disponíveis
+            Cryptorastas disponíveis para venda
           </h2>
           <Marketplace itemsPerPage={itemsPerPage} />
         </section>
