@@ -75,7 +75,7 @@ function App({ address, isMobile }: { address: string; isMobile: boolean }) {
         <section style={{ marginBottom: "6rem" }}>
           <div style={{ textAlign: "center", marginBottom: "3rem" }}>
             <h2 style={{ fontFamily: font, fontWeight: 700, fontSize: "clamp(2rem, 4vw, 3rem)", color: INK, margin: "0 0 0.5rem" }}>Meus Cryptorastas</h2>
-            <p style={{ fontFamily: font, fontSize: "0.6875rem", letterSpacing: "0.18em", color: INK, opacity: 0.45 }}>MINHA COLEÇÃO</p>
+          
           </div>
           <NFTGallery walletAddress={address} itemsPerPage={itemsPerPage} />
         </section>
