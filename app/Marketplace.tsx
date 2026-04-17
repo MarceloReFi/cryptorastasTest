@@ -26,7 +26,7 @@ const btnSecondary: React.CSSProperties = {
 const btnDisabled: React.CSSProperties = { ...btnSecondary, opacity: 0.4, cursor: "not-allowed" };
 
 const MIN_PRICE_WEI = BigInt(
-  Math.round(parseFloat(process.env.NEXT_PUBLIC_MIN_LISTING_ETH || "0.02") * 1e18).toString()
+  Math.round(parseFloat(process.env.NEXT_PUBLIC_MIN_LISTING_ETH || "0.015") * 1e18).toString()
 );
 
 const paginationPill = (active: boolean): React.CSSProperties => ({
