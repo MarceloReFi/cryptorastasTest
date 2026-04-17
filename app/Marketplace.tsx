@@ -63,7 +63,10 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       const enriched = data.listings.map((nft: any) => ({ ...nft, protocolAddress: nft.protocolAddress || SEAPORT_1_6_ADDRESS }));
       const seen = new Set<string>();
       const unique = enriched.filter((nft: any) => { if (seen.has(nft.tokenId)) return false; seen.add(nft.tokenId); return true; });
-      const aboveFloor = unique.filter((nft: any) => BigInt(nft.price) >= MIN_PRICE_WEI);
+      console.log("[price-filter] sample prices:", unique.slice(0, 3).map((n: any) => n.price));
+      const aboveFloor = unique.filter((nft: any) => {
+        try { return BigInt(nft.price || "0") >= MIN_PRICE_WEI; } catch { return false; }
+      });
       setPagesCache(prev => new Map(prev).set(pageNumber, aboveFloor));
       setListings(aboveFloor);
     } catch { setError("Erro ao buscar NFTs."); }
