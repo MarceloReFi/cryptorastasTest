@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const CRYPTORASTAS_CONTRACT = "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
-const MIN_PRICE_WEI = BigInt(20000000000000000); // 0.015 ETH
+const MIN_PRICE_WEI = BigInt(15000000000000000); // 0.015 ETH
 
 const metadataCache = new Map<string, { name: string; image: string; cachedAt: number }>();
 const METADATA_TTL = 60 * 60 * 1000; // 1 hour
