@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const CRYPTORASTAS_CONTRACT = "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
+const MIN_PRICE_WEI = BigInt(20000000000000000); // 0.02 ETH
 
 const metadataCache = new Map<string, { name: string; image: string; cachedAt: number }>();
 const METADATA_TTL = 60 * 60 * 1000; // 1 hour
@@ -10,7 +11,8 @@ export async function GET(request: NextRequest) {
   const limit = searchParams.get("limit") || "30";
   const cursor = searchParams.get("cursor");
 
-  let url = `https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=${limit}`;
+  const fetchLimit = Math.min(parseInt(limit) * 4, 100);
+  let url = `https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=${fetchLimit}`;
   if (cursor) {
     url += `&next=${cursor}`;
   }
@@ -80,5 +82,9 @@ export async function GET(request: NextRequest) {
 
   const listings = nftsWithDetails.filter((nft) => nft !== null);
 
-  return NextResponse.json({ listings, next: data.next ?? null });
+  const filtered = listings.filter((nft) => {
+    try { return BigInt(nft!.price) >= MIN_PRICE_WEI; } catch { return false; }
+  });
+
+  return NextResponse.json({ listings: filtered.slice(0, parseInt(limit)), next: data.next ?? null });
 }
