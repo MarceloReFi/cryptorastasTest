@@ -25,6 +25,10 @@ const btnSecondary: React.CSSProperties = {
 };
 const btnDisabled: React.CSSProperties = { ...btnSecondary, opacity: 0.4, cursor: "not-allowed" };
 
+const MIN_PRICE_WEI = BigInt(
+  Math.round(parseFloat(process.env.NEXT_PUBLIC_MIN_LISTING_ETH || "0.02") * 1e18).toString()
+);
+
 const paginationPill = (active: boolean): React.CSSProperties => ({
   padding: "0.5rem 1.5rem", borderRadius: "999px",
   fontFamily: font, fontWeight: active ? 700 : 400, fontSize: "0.875rem",
@@ -59,8 +63,9 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       const enriched = data.listings.map((nft: any) => ({ ...nft, protocolAddress: nft.protocolAddress || SEAPORT_1_6_ADDRESS }));
       const seen = new Set<string>();
       const unique = enriched.filter((nft: any) => { if (seen.has(nft.tokenId)) return false; seen.add(nft.tokenId); return true; });
-      setPagesCache(prev => new Map(prev).set(pageNumber, unique));
-      setListings(unique);
+      const aboveFloor = unique.filter((nft: any) => BigInt(nft.price) >= MIN_PRICE_WEI);
+      setPagesCache(prev => new Map(prev).set(pageNumber, aboveFloor));
+      setListings(aboveFloor);
     } catch { setError("Erro ao buscar NFTs."); }
     finally { setLoading(false); }
   };
@@ -120,7 +125,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
 
   if (listings.length === 0) return (
     <div style={{ textAlign: "center", padding: "3rem 0" }}>
-      <p style={{ color: INK, opacity: 0.6, marginBottom: "1.5rem", fontFamily: font }}>{error ?? "Nenhum Cryptorasta disponível"}</p>
+      <p style={{ color: INK, opacity: 0.6, marginBottom: "1.5rem", fontFamily: font }}>{error ?? `Nenhum Cryptorasta disponível acima de ${(Number(MIN_PRICE_WEI) / 1e18).toFixed(2)} ETH no momento.`}</p>
       <button onClick={() => { setError(null); refreshListings(); }} style={{ ...btnSecondary, width: "auto", padding: "0.65rem 2rem" }}>Atualizar</button>
     </div>
   );
