@@ -81,7 +81,7 @@ function App({ address, isMobile }: { address: string; isMobile: boolean }) {
         </section>
         <section>
           <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-            <h2 style={{ fontFamily: font, fontWeight: 700, fontSize: "clamp(2rem, 4vw, 3rem)", color: INK, margin: "0 0 0.5rem" }}>Cryptorastas disponíveis</h2>
+            <h2 style={{ fontFamily: font, fontWeight: 700, fontSize: "clamp(2rem, 4vw, 3rem)", color: INK, margin: "0 0 0.5rem" }}>Cryptorastas disponíveis para venda</h2>
           </div>
           <Marketplace itemsPerPage={itemsPerPage} />
         </section>
