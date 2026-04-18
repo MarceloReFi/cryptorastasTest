@@ -6,9 +6,6 @@ export const metadata: Metadata = {
   title: "RastaWallet",
   description: "One love inna decentralized style. Compre Cryptorastas com PIX ou ETH.",
   icons: { icon: '/cryptorastas-pixel1x1.gif' },
-};
-
-export const metadata: Metadata = {
   openGraph: {
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
