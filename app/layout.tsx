@@ -4,7 +4,7 @@ import { ThirdwebProvider } from "thirdweb/react";
 
 export const metadata: Metadata = {
   title: "RastaWallet",
-  description: "One love inna decentralized style. Compre Cryptorastas com PIX ou ETH.",
+  description: "One love inna decentralized style. Compre Cryptorastas com Pix ou Cartão.",
   icons: { icon: '/cryptorastas-pixel1x1.gif' },
   openGraph: {
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
