@@ -150,7 +150,7 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
 
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1.5rem", marginBottom: "2.5rem" }}>
         <button onClick={() => setCurrentPage(p => p - 1)} disabled={!hasPrev} style={{ ...paginationPill(false), opacity: hasPrev ? 1 : 0.3, cursor: hasPrev ? "pointer" : "not-allowed" }}>Anterior</button>
-        <span style={paginationPill(true)}>Página {currentPage + 1}</span>
+        <span style={{ ...paginationPill(true), whiteSpace: "nowrap" }}>Página {currentPage + 1}</span>
         <button onClick={() => setCurrentPage(p => p + 1)} disabled={!hasNext} style={{ ...paginationPill(false), opacity: hasNext ? 1 : 0.3, cursor: hasNext ? "pointer" : "not-allowed" }}>Próxima</button>
       </div>
 

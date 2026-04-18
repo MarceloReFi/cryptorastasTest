@@ -9,9 +9,6 @@ import { useState, useEffect } from "react";
 const client = createThirdwebClient({ clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID! });
 const wallets = [
   inAppWallet({ auth: { options: ["email", "google"] } }),
-  createWallet("io.metamask"),
-  createWallet("com.coinbase.wallet"),
-  createWallet("me.rainbow"),
 ];
 const connectModalConfig = {
   size: "compact" as const,
@@ -35,11 +32,12 @@ function useIsMobile() {
 }
 
 function Navbar({ showConnect = false }: { showConnect?: boolean }) {
+  const isMobile = useIsMobile();
   return (
-    <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem 2.5rem", zIndex: 10 }}>
+    <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: isMobile ? "0.875rem 1rem" : "1.25rem 2.5rem", zIndex: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
         <img src="/cryptorastas01-sticker.png" alt="Rasta Logo" style={{ height: "2rem", width: "auto" }} />
-        <span style={{ fontFamily: font, fontWeight: 700, fontSize: "1.375rem", color: INK, letterSpacing: "-0.02em" }}>RastaWallet</span>
+        <span style={{ fontFamily: font, fontWeight: 700, fontSize: "1.375rem", color: INK, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>RastaWallet</span>
       </div>
       {showConnect && <ConnectButton client={client} wallets={wallets} connectModal={connectModalConfig} />}
     </nav>
