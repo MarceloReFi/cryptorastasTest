@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const CRYPTORASTAS_CONTRACT = "0x07cd221b2fe54094277a2f4e1c1bc6df14e63678";
 const MIN_PRICE_WEI = BigInt(15000000000000000); // 0.015 ETH
+const OPENSEA_FETCH_LIMIT = 100;
 
 const metadataCache = new Map<string, { name: string; image: string; cachedAt: number }>();
 const METADATA_TTL = 60 * 60 * 1000; // 1 hour
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
   const limit = searchParams.get("limit") || "30";
   const cursor = searchParams.get("cursor");
 
-  const fetchLimit = Math.min(parseInt(limit) * 4, 100);
+  const fetchLimit = OPENSEA_FETCH_LIMIT;
   let url = `https://api.opensea.io/api/v2/listings/collection/cryptorastas-collection/all?limit=${fetchLimit}`;
   if (cursor) {
     url += `&next=${cursor}`;
