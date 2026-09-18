@@ -1,14 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useActiveAccount, TransactionButton } from "thirdweb/react";
-import { prepareTransaction, createThirdwebClient } from "thirdweb";
-import { ethereum } from "thirdweb/chains";
 
-declare global { interface Window { ethereum?: any; } }
-
-const client = createThirdwebClient({ clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID! });
-const SEAPORT_1_6_ADDRESS = "0x0000000000000068F116a894984e2DB1123eB395";
+const INFINITE_PAY_STORE_URL = "https://loja.infinitepay.io/cryptorastas/dlv7515-nft-cryptorastas";
 const font = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 const INK  = "#1a1500";
 const Y    = "#FFD800";
@@ -23,8 +17,6 @@ const btnSecondary: React.CSSProperties = {
   fontFamily: font, fontWeight: 500, fontSize: "0.875rem",
   border: "1.5px solid " + INK, background: "transparent", color: INK, cursor: "pointer", transition: "opacity 0.2s",
 };
-const btnDisabled: React.CSSProperties = { ...btnSecondary, opacity: 0.4, cursor: "not-allowed" };
-
 const MIN_PRICE_WEI = BigInt(
   Math.round(parseFloat(process.env.NEXT_PUBLIC_MIN_LISTING_ETH || "0.015") * 1e18).toString()
 );
@@ -42,13 +34,10 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
   const [listings, setListings]       = useState<any[]>([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState<string | null>(null);
-  const [purchasing, setPurchasing]   = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [cursors, setCursors]         = useState<(string | null)[]>([null]);
   const [pagesCache, setPagesCache]   = useState<Map<number, any[]>>(new Map());
-  const [showPixSoon, setShowPixSoon] = useState(false);
   const [ethToBrl, setEthToBrl]       = useState<number>(18000);
-  const account = useActiveAccount();
 
   const fetchListings = async (pageNumber: number, cursor: string | null = null) => {
     try {
@@ -60,9 +49,8 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
       const data = await response.json();
       if (!data.listings?.length) { setListings([]); return; }
       if (data.next && cursors.length === pageNumber + 1) setCursors(prev => [...prev, data.next]);
-      const enriched = data.listings.map((nft: any) => ({ ...nft, protocolAddress: nft.protocolAddress || SEAPORT_1_6_ADDRESS }));
       const seen = new Set<string>();
-      const unique = enriched.filter((nft: any) => { if (seen.has(nft.tokenId)) return false; seen.add(nft.tokenId); return true; });
+      const unique = data.listings.filter((nft: any) => { if (seen.has(nft.tokenId)) return false; seen.add(nft.tokenId); return true; });
       const aboveFloor = unique.filter((nft: any) => {
         try { return BigInt(nft.price || "0") >= MIN_PRICE_WEI; } catch { return false; }
       });
@@ -84,35 +72,6 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
   }, []);
 
   const refreshListings = () => { setPagesCache(new Map()); setCursors([null]); setCurrentPage(0); setListings([]); fetchListings(0, null); };
-  const removeInvalidListing = (tokenId: string) => setListings(prev => prev.filter(n => n.tokenId !== tokenId));
-
-  const preparePurchaseTransaction = async (nft: any) => {
-    try {
-      const response = await fetch("/api/fulfill-listing", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderHash: nft.orderHash, walletAddress: account?.address, protocolAddress: nft.protocolAddress }),
-      });
-      const result = await response.json();
-      if (result.error) { if (result.error.includes("not found")) { removeInvalidListing(nft.tokenId); alert("❌ Este NFT já foi vendido."); return null; } throw new Error(result.error); }
-      if (!result.fulfillment_data?.transaction) throw new Error("Dados de transação não encontrados");
-      const txInfo = result.fulfillment_data.transaction;
-      const params = txInfo.input_data?.parameters;
-      if (!params) throw new Error("Parâmetros não encontrados");
-      const { ethers } = await import("ethers");
-      const abi = [`function fulfillBasicOrder_efficient_6GL6yc(tuple(address considerationToken,uint256 considerationIdentifier,uint256 considerationAmount,address offerer,address zone,address offerToken,uint256 offerIdentifier,uint256 offerAmount,uint8 basicOrderType,uint256 startTime,uint256 endTime,bytes32 zoneHash,uint256 salt,bytes32 offererConduitKey,bytes32 fulfillerConduitKey,uint256 totalOriginalAdditionalRecipients,tuple(uint256 amount,address recipient)[] additionalRecipients,bytes signature) parameters) external payable returns (bool)`];
-      const iface = new ethers.Interface(abi);
-      const txData = iface.encodeFunctionData("fulfillBasicOrder_efficient_6GL6yc", [{
-        considerationToken: params.considerationToken, considerationIdentifier: params.considerationIdentifier,
-        considerationAmount: params.considerationAmount, offerer: params.offerer, zone: params.zone,
-        offerToken: params.offerToken, offerIdentifier: params.offerIdentifier, offerAmount: params.offerAmount,
-        basicOrderType: params.basicOrderType, startTime: params.startTime, endTime: params.endTime,
-        zoneHash: params.zoneHash, salt: params.salt, offererConduitKey: params.offererConduitKey,
-        fulfillerConduitKey: params.fulfillerConduitKey, totalOriginalAdditionalRecipients: params.totalOriginalAdditionalRecipients,
-        additionalRecipients: params.additionalRecipients || [], signature: params.signature,
-      }]);
-      return prepareTransaction({ to: txInfo.to, chain: ethereum, client, data: txData as `0x${string}`, value: BigInt(txInfo.value) });
-    } catch (error: any) { alert(`❌ Erro: ${error.message}`); return null; }
-  };
 
   const formatBrl = (ethPrice: string, decimals: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((parseInt(ethPrice) / Math.pow(10, decimals)) * ethToBrl);
@@ -137,17 +96,6 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
 
   return (
     <>
-      {showPixSoon && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: "1rem" }}>
-          <div style={{ background: Y, borderRadius: "20px", padding: "2.5rem 2rem", maxWidth: "360px", width: "100%", textAlign: "center" }}>
-            <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>⏳</div>
-            <h3 style={{ fontFamily: font, fontWeight: 700, fontSize: "1.25rem", color: INK, marginBottom: "0.5rem" }}>Em Breve!</h3>
-            <p style={{ fontFamily: font, fontSize: "0.875rem", color: INK, opacity: 0.6, marginBottom: "2rem" }}>O pagamento via PIX estará disponível em breve.</p>
-            <button onClick={() => setShowPixSoon(false)} style={btnPrimary}>Fechar</button>
-          </div>
-        </div>
-      )}
-
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1.5rem", marginBottom: "2.5rem" }}>
         <button onClick={() => setCurrentPage(p => p - 1)} disabled={!hasPrev} style={{ ...paginationPill(false), opacity: hasPrev ? 1 : 0.3, cursor: hasPrev ? "pointer" : "not-allowed" }}>Anterior</button>
         <span style={{ ...paginationPill(true), whiteSpace: "nowrap" }}>Página {currentPage + 1}</span>
@@ -172,24 +120,9 @@ export function Marketplace({ itemsPerPage = 30 }: { itemsPerPage?: number }) {
                 <span style={{ fontFamily: font, fontWeight: 700, fontSize: "1.125rem", color: INK }}>#{nft.tokenId}</span>
                 <span style={{ fontFamily: font, fontWeight: 700, fontSize: "1rem", color: INK }}>{formatBrl(nft.price, nft.decimals)}</span>
               </div>
-              {account ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-                  <button onClick={() => setShowPixSoon(true)} style={btnPrimary}>Comprar com PIX</button>
-                  <TransactionButton
-                    transaction={async () => { const tx = await preparePurchaseTransaction(nft); if (!tx) throw new Error("Falha"); return tx; }}
-                    onTransactionSent={() => setPurchasing(nft.tokenId)}
-                    onTransactionConfirmed={(r) => { alert(`Compra realizada!\n\nTransação: ${r.transactionHash}`); removeInvalidListing(nft.tokenId); setPurchasing(null); }}
-                    onError={(e) => { alert(`❌ Falhou:\n\n${e.message}`); setPurchasing(null); }}
-                    payModal={{ metadata: { name: `Comprar Cryptorasta #${nft.tokenId}`, image: nft.image || "/Cryptorastas-logo-wide.png" } }}
-                    style={purchasing === nft.tokenId ? btnDisabled : btnSecondary}
-                    disabled={purchasing === nft.tokenId}
-                  >
-                    {purchasing === nft.tokenId ? "Processando..." : "Comprar com Crédito/ETH"}
-                  </TransactionButton>
-                </div>
-              ) : (
-                <button disabled style={btnDisabled}>Conecte para Comprar</button>
-              )}
+              <a href={INFINITE_PAY_STORE_URL} target="_blank" rel="noopener noreferrer" style={{ ...btnPrimary, display: "block", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+                Comprar
+              </a>
             </div>
           </div>
         ))}
